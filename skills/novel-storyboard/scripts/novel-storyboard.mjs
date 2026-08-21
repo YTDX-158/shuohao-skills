@@ -24,11 +24,12 @@ import { fileURLToPath } from 'node:url';
  */
 
 export const DEFAULT_PARAMS = {
-  maxSegmentSeconds: 15, // 视频模型单段生成上限（秒）
-  minCutSeconds: 2,      // 单个分镜下限
-  maxCutSeconds: 5,      // 单个分镜上限——3 秒左右是短剧的呼吸
-  maxOnScreen: 3,        // 单个分镜同框人数上限，超了必须带拆解说明
+  maxSegmentSeconds: 15, // 段（情绪弧线分组）上限（秒）
+  minCutSeconds: 1,      // 单个镜下限——反应镜/插入特写可 1 秒
+  maxCutSeconds: 6,      // 单个镜上限——长台词拆不动给到 6s
+  maxOnScreen: 3,        // 单个镜同框人数上限，超了必须带拆解说明
   tolerance: 0.15,       // 每集总时长对剧本目标的容差
+  charsPerSecond: 5.5,   // 中文台词语速（字/秒），情绪系数联动
 };
 
 export function paramsOf(doc) {
@@ -181,7 +182,7 @@ export function h3CutSlices(prompt, cutCount, lang = 'en') {
  * 的 params 里读，两边天然一致。
  */
 
-const SCRIPT_DEFAULTS = { charsPerSecond: 4.5, actionSeconds: 2.5 };
+const SCRIPT_DEFAULTS = { charsPerSecond: 5.5, actionSeconds: 2.5 };
 const lineChars = (line) => String(line ?? '').replace(/\s+/g, '').length;
 
 /** 把 script.json 展开成分镜要认领的节拍清单：ep → scenes → beats。 */
