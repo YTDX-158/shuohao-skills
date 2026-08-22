@@ -34,7 +34,7 @@ Same stance as the other four skills in this repo: **a checklist left to model s
 | On-screen cap | ≤3 people per shot, else a breakdown note is required |
 | Segment id | `E01-01` format, sequential |
 | Size phrase | `close-up` etc. must appear in the storyboard-image prompt |
-| Camera vocabulary | Seedance terms (`Push In` / `Tracking Shot`…), in the shot's own description |
+| Camera vocabulary | Seedance terms (`Push In` / `Tracking`…), in the shot's own description |
 | **Fixed duration + segment sum** | shot `seconds` matches the `seedancePrompt` shot line verbatim; segment = Σ shots |
 | **Dialogue verbatim** | `@speaker says in Chinese [tone] <line>` — original language, not one punctuation off |
 | **No text** | every `seedancePrompt` carries "no visible subtitles/text" |
@@ -107,7 +107,7 @@ node scripts/novel-storyboard.mjs export sb.json --script script.json
 SKILL.md                 workflow for the agent
 scripts/
   novel-storyboard.mjs   seed / validate / checkup / render / export / slug
-  selftest.mjs           254+ assertions, no model
+  selftest.mjs           240+ assertions, no model
 references/
   schema.md              storyboard.json structure + duration chain
   seedance-prompt.md     Seedance per-shot prompt spec + cinematography reference
@@ -124,6 +124,6 @@ examples/
 node scripts/selftest.mjs
 ```
 
-254+ assertions covering beat expansion / metadata reconciliation / stats & batches / per-gate break-cases / recipe parsing & mount / seed / rendering (zh+en UI) / export. No model, no quota, ~1s. Run this after every script change.
+240+ assertions covering beat expansion / metadata reconciliation / stats & batches / per-gate break-cases / recipe parsing & mount / seed / rendering (zh+en UI) / export. No model, no quota, ~1s. Run this after every script change.
 
 **Upstream verified on macOS + Node 24; YTDX fork verified on Win11 + Node 24.**

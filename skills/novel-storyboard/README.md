@@ -14,7 +14,7 @@
          └─ 无字幕约束
 ```
 
-- **每镜一图一提示词**——分镜图 `frame`（供 Seedream 出参考图）+ `seedancePrompt`（render 组装，直接下单给 Seedance），独立生成
+- **每镜一图一提示词**——分镜图 `frame`（供 Seedream 出参考图）+ `seedancePrompt`（模型手写、validate 逐字对账，直接下单给 Seedance），独立生成
 - **@绑定 = 设定图**——`@老张` `@蒲扇` 都是上传的设定图（角色/道具），+ 场景图（`sceneImage` 提示词外），全参考、文字只管构图动作情绪
 - **固定时长写死**——镜号行 `c01,4s` 就是生成参数；台词秒数（÷5.5）必须装得下；长台词优先拆镜
 - **分镜图是资产合成，不是凭空画** — 出图挂场景/角色/道具设定图当参考图。有图模型就真出图（可选）
@@ -23,7 +23,7 @@
 
 ![storyboard-report.html](assets/report.webp)
 
-## 质量门：16 道（+ 可选第 17），全是代码
+## 质量门：17 道（+ 可选第 18），全是代码
 
 与仓库里另外四个 skill 同一主张：**checklist 交给模型自觉是靠不住的**。
 
@@ -37,16 +37,16 @@
 | 同框上限 | 单个镜 ≤ 3 人，超了必须带拆解说明 |
 | 段号纪律 | `E01-01` 格式、按顺序连号 |
 | 景别短语 | `close-up` 这类英文短语必须出现在分镜图提示词里 |
-| 运镜词表 | 运镜用 Seedance 词表（`Push In` / `Tracking Shot`…），落在自己的镜描述里 |
+| 运镜词表 | 运镜用 Seedance 词表（`Push In` / `Tracking`…），落在自己的镜描述里 |
 | **镜固定时长+段累加** | 每镜 `seconds` 与 `seedancePrompt` 镜号行逐字对账；段内镜累加 = 段时长 |
 | **台词原语言逐字** | `@说话人用中文[语气]地说道<台词>`——按剧本原语言，改一个标点都过不去 |
 | **无字幕约束** | 每镜 `seedancePrompt` 带「不出现任何文字字幕」 |
-| **风格短语统一** | `style` 预设（如「写实向半厚涂」）出现在每条分镜图提示词里——同剧不许画风漂 |
+| **风格短语统一** | `style` 声明（如「写实向半厚涂」）出现在每镜 `seedancePrompt` 头部——同剧不许画风漂 |
 | 分镜图提示词卫生 | 全英文非空 |
 | 提示词不含角色名 | 分镜图提示词恒查 |
 | **@绑定↔资产** | 元数据里的 `@X` 全部 ∈ 资产库（角色/道具设定图名字） |
 | 引用对账 | 场次/人物/道具全部对账剧本该场 |
-| **镜头配方**（可选第17） | 给了 `--shots <卡片目录>` 才查（同原逻辑） |
+| **镜头配方**（可选第18） | 给了 `--shots <卡片目录>` 才查（同原逻辑） |
 
 自测里每道门都有**击穿用例**——证明它真的会拦。
 
@@ -96,7 +96,7 @@ node scripts/novel-storyboard.mjs validate sb.json \
      --script script.json --outline outline.json --cast cast.json
 node scripts/novel-storyboard.mjs checkup sb.json --script script.json
 node scripts/novel-storyboard.mjs validate sb.json --script script.json \
-     --shots ../shot-recipes/references/cards                            # 可选：开第 17 道配方门
+     --shots ../shot-recipes/references/cards                            # 可选：开第 18 道配方门
 node scripts/novel-storyboard.mjs render sb.json --html \
      --script script.json --outline outline.json --art art.json > storyboard-report.html
 node scripts/novel-storyboard.mjs export sb.json --script script.json   # 投产包
@@ -117,7 +117,7 @@ node scripts/novel-storyboard.mjs export sb.json --script script.json   # 投产
 SKILL.md                 给 agent 读的工作流
 scripts/
   novel-storyboard.mjs   seed / validate / checkup / render / export / slug
-  selftest.mjs           254+ 项断言，不调模型
+  selftest.mjs           240+ 项断言，不调模型
 references/
   schema.md              storyboard.json 结构 + 时长约束链
   seedance-prompt.md     Seedance 每镜提示词写法规范 + 摄影参考
@@ -136,6 +136,6 @@ assets/
 node scripts/selftest.mjs
 ```
 
-254+ 项断言，覆盖节拍展开 / 元数据对账 / 统计与批次 / 质量门逐项击穿 / 配方卡库解析与挂载 / seed / 渲染（含中英界面）/ 导出。不调模型、不花额度、1 秒跑完。改完脚本先跑这个。
+240+ 项断言，覆盖节拍展开 / 元数据对账 / 统计与批次 / 质量门逐项击穿 / 配方卡库解析与挂载 / seed / 渲染（含中英界面）/ 导出。不调模型、不花额度、1 秒跑完。改完脚本先跑这个。
 
 **只在 macOS + Node 24 上实测过（上游）；YTDX fork 在 Win11 + Node 24 验证。**

@@ -34,7 +34,7 @@
 | `seconds` | number | 镜时长，1–6 秒固定。认领节拍的台词秒数必须装得下（语速 5.5 字/秒） |
 | `size` | enum | 景别：`extreme-wide` 大远景 / `wide` 全景 / `medium` 中景 / `close` 特写 / `extreme-close` 大特写 |
 | `camera` | enum | 运镜，用 Seedance 词表（见 seedance-prompt.md）：`Static` `Push In` `Pull Out` `Zoom` `Pan` `Truck` `Tilt` `Pedestal` `Arc` `Tracking` `POV` `Shake` `Roll` |
-| `characters` | string[] | 画内人物（设定图名字，如「老张」），必须 ⊆ 剧本该场人物。> maxOnScreen 时带 `note` |
+| `characters` | string[] | 画内人物（剧本 ID，如 `C01`；报告显示设定图名字），必须 ⊆ 剧本该场人物。> maxOnScreen 时带 `note` |
 | `props` | string[] | 画内道具（设定图名字），必须 ⊆ 剧本该场道具。可省略 |
 | `frame` | string | 分镜图提示词：这一格关键帧的样子。景别英文短语必须在里面；禁角色名 |
 | `space` | string | 空间：本镜所在环境（如「昏暗狭小房间远端」） |
@@ -43,12 +43,13 @@
 | `mood` | string | 情绪：只写本镜主角，`@角色-情绪 程度/10` |
 | `shotDesc` | string | 视频视觉描述（自然语言：运镜/光影/微动作/时间维度） |
 | `sceneImage` | string | 场景图路径（提示词外单独绑定，环境参考图） |
+| `seedancePrompt` | string | 每镜一条 Seedance 提示词，模型照 `seedance-prompt.md` 手写；validate 逐字对账（见下） |
 | `recipe` | string | 镜头配方卡 id，可选（同原逻辑） |
 | `note` | string | 备注，可选 |
 
-## seedancePrompt 的结构（render 组装）
+## seedancePrompt 的结构（模型手写，validate 对账）
 
-组装规则照 `references/seedance-prompt.md`。骨架：
+写法照 `references/seedance-prompt.md`。骨架：
 
 ```text
 <style>，画面不要出现任何文字，生成视频无BGM；

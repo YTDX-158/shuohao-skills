@@ -2,7 +2,7 @@
 
 方法论学自实战样本（真人电影风格 / 写实向半厚涂）+ seedance-20-ytdx 摄影参考，内化成本 skill 自带文档——不依赖任何外部 skill。写每个镜的 `seedancePrompt` 照这份做，结构部分有质量门逐字对账。
 
-## 结构（render 组装，validate 对账的部分）
+## 结构（模型手写，validate 逐字对账的部分）
 
 ```text
 <风格声明>，画面不要出现任何文字，生成视频无BGM；
