@@ -1608,7 +1608,7 @@ const USAGE = `novel-storyboard.mjs — novel-storyboard skill 的确定性工�
   checkup <sb.json> --script <script.json>    只打印质量门 ✓/✗，有未过项 exit 1
           [--shots <卡片目录>]
   render <sb.json> --script <script.json>     渲染报告到 stdout（默认 --md）
-         [--html|--md] [--outline] [--art]    分镜图从 ./<段号>/f<切序>.png 找
+         [--html|--md] [--outline] [--cast] [--art]   cast/art 供 @绑定资产库（缺了会误判 bind 门）
          [--lang zh|en]                       报告界面语言（默认 zh；未指定时读取 JSON 顶层 lang 字段）
          [--shots <卡片目录>]                  报告的「配方」列显示卡名并标注建议景别／运镜的偏离
   export <sb.json> --script <script.json>     导出 Seedance 投产包：每段一个文件夹 <段号>/prompt-NN.md
@@ -1738,10 +1738,11 @@ function main(argv) {
 
   if (cmd === 'render') {
     const [path] = rest;
-    if (!path) throw new Error('用法：render <storyboard.json> --script <script.json> [--html|--md] [--lang zh|en] [--outline] [--art]');
+    if (!path) throw new Error('用法：render <storyboard.json> --script <script.json> [--html|--md] [--lang zh|en] [--outline] [--cast] [--art]');
     const board = readJson(path);
     const ctx = loadCtx(rest);
     if (!ctx.script) throw new Error('分镜离开剧本没有意义——必须给 --script <script.json>');
+    if (!ctx.cast || !ctx.art) console.error('⚠️ 没给 --cast / --art，@绑定资产库不完整（缺角色或道具名）——报告里的 @绑定门可能误判，建议都带上');
     // 界面语言：--lang > JSON 顶层 lang 字段 > 'zh'（后两级在渲染器里兜底）
     const langFlag = flag(rest, '--lang');
     if (langFlag) ctx.lang = langFlag;
@@ -1756,6 +1757,7 @@ function main(argv) {
     const board = readJson(path);
     const ctx = loadCtx(rest);
     if (!ctx.script) throw new Error('分镜离开剧本没有意义——必须给 --script <script.json>');
+    if (!ctx.cast || !ctx.art) console.error('⚠️ 没给 --cast / --art，@绑定资产库不完整（缺角色或道具名）——投产包的 @绑定可能不完整，建议都带上');
     const dir = flag(rest, '--out', '.');
     const pack = exportPack(board, ctx.script, { imageExists: (rel) => existsSync(resolve(rel)), dir, assets: assetNames(ctx) });
     for (const f of pack.files) {
