@@ -80,9 +80,15 @@ node {baseDir}/scripts/novel-storyboard.mjs seed <script.json> --eps 1-3 > <work
 每集一份任务，能并发就并发。每份任务拿到：
 
 - `{baseDir}/references/storyboard-pass.md` 和 `{baseDir}/references/schema.md` 和 `{baseDir}/references/seedance-prompt.md`（读它们，照着做）
+- **导演层（内化自 seedance-20-ytdx，切镜前必须读）**：`{baseDir}/references/directing-read.md`（这段戏要干什么→十字段判断）+ `{baseDir}/references/directing-engine.md`（场景怎么拍→意图/景别/表演/连贯性）+ `{baseDir}/references/cinematography-shot-language.md`（镜头手段怎么说→景别/运镜/机位）
 - 该集的 seedScenes 底稿 + 场景卡（art.json 的锚点与光照提示词）+ 角色卡（cast.json 的形象要点）
 
-流程：**先按情绪弧线分组**（每段 ≤15 秒、不跨场，一段一个"起势→反转"单元），**段内切 1–6 秒的镜**（对话正反打、关键动作插入特写、反应镜可 1 秒——切镜语法都在 storyboard-pass.md），每镜写结构化元数据 + 一条视觉描述。
+流程：**先做导演读解**（读 directing-read：这一段戏的转折/视角/权力/潜台词是什么，读解不写进提示词，只指导切镜）→ **再按情绪弧线分组**（每段 ≤15 秒、不跨场，一段一个"起势→反转"单元）→ **段内切 1–6 秒的镜**（对话正反打、关键动作插入特写、反应镜可 1 秒——切镜语法都在 storyboard-pass.md）→ 每镜写结构化元数据 + 一条视觉描述。
+
+**导演判断三原则（写每镜时对照）**：
+1. **景别跟着情绪走，不是统一中景**——亲密对话用近景怼脸、反应用特写、关系变化用过肩/侧拍
+2. **运镜有理由**——揭示戏该推近、灾难戏该升降/横移、权力戏该低机位；固定机位留给口型/身份/连贯锚点。不为动而动
+3. **表演是动作不是情绪词**——"林风很期待"换成"林风把蝴蝶结举到眼前，眼睛跟着它慢慢发亮"；台词跟画面对上，画面在演谁，台词就是谁说
 
 **每镜一条 `seedancePrompt`**，照 `{baseDir}/references/seedance-prompt.md` 写。要点：头部风格声明（全片统一）+ 无文字无BGM；镜号行 `c<镜号>,<秒数>s`（秒数 = `seconds` 字段，一个字符都不许漂）；元数据四件套（空间/姿态/位置/情绪）全带 `@设定图` 绑定；台词 `@说话人用中文[语气]地说道<台词>` 按剧本逐字；每镜带无字幕强调。
 
