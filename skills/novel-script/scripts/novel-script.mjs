@@ -215,7 +215,7 @@ export function gateReport(doc, ctx = {}) {
         if (!ref) {
           bad.scenes.push(`第 ${ep.ep} 集引用了不存在的场景 ${sc?.sceneId}`);
         } else if (thText(sc?.lighting) && !(ref.lighting ?? []).some((l) => l.state === sc.lighting)) {
-          bad.scenes.push(`第 ${ep.ep} 集 ${sc.sceneId} 的光照「${sc.lighting}」没在美术设定里登记`);
+          bad.scenes.push(`第 ${ep.ep} 集 ${sc.sceneId} 的光照「${sc.lighting}」没在美术设定里登记——回 novel-art 给这个场景补该光照状态（同场景戏状态变化 = 换光照，如教室「日常→启灵仪式」）`);
         }
         for (const pid of sc?.props ?? []) {
           if (!propIds.has(pid)) bad.scenes.push(`第 ${ep.ep} 集引用了不存在的道具 ${pid}`);
