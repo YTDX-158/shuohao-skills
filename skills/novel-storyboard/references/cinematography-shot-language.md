@@ -1,6 +1,6 @@
 # 镜头语言 · 每镜的具体拍法（内化自 seedance-20-ytdx cinematography-shot-language）
 
-[[directing-read]] 判断这段戏要干什么，[[directing-engine]] 决定每个镜怎么为意图服务，这份给出**镜头手段本身怎么说**——景别/机位/运镜/起点终点/脆弱锚点。写每镜的 `shotDesc` 时照这份做。
+`references/directing-read.md` 判断这段戏要干什么，`references/directing-engine.md` 决定每个镜怎么为意图服务，这份给出**镜头手段本身怎么说**——景别/机位/运镜/起点终点/脆弱锚点。写每镜的 `shotDesc` 时照这份做。
 
 ## 镜头契约：每镜至少声明这些
 
@@ -13,6 +13,8 @@
 | **起点画面** | 镜头开始的第一个可读构图 |
 | **落点画面** | 结束时变化了的状态/姿态/揭示/手递 |
 | **脆弱锚点** | 脸 / 手 / 道具位置——运镜必须护住它们 |
+
+**焦段数值**：上面的"焦段感"是感受方向，具体焦段↔景别匹配表（大远景 ≤24mm、中景 35-50mm、特写 85mm+ 等）在 `references/seedance-prompt.md` 的摄影参考节。
 
 **一段标准拍法**：`[景别/机位/焦段]。镜头从[起点构图]起，[一个运镜]在[速度]，同时[主体动作]，落在[清晰落点]。护住[脆弱锚点]。`
 
@@ -59,5 +61,5 @@
 
 ## 关联
 
-- 这段戏要干什么 → [[directing-read]]
-- 每个镜怎么为意图服务 → [[directing-engine]]
+- 这段戏要干什么 → `references/directing-read.md`
+- 每个镜怎么为意图服务 → `references/directing-engine.md`

@@ -1,6 +1,6 @@
 # 导演引擎 · 场景怎么拍（内化自 seedance-20-ytdx directing-engine）
 
-读完 [[directing-read]]（这段戏要干什么）之后，用这份决定"每个镜具体怎么拍"。
+读完 `references/directing-read.md`（这段戏要干什么）之后，用这份决定"每个镜具体怎么拍"。
 
 ## 核心：一个意图，所有乐器弹同一个音
 
@@ -65,5 +65,5 @@
 
 ## 关联
 
-- 戏的判断（这段戏要干什么）见 [[directing-read]]
-- 镜头手段怎么说（景别/运镜/机位）见 [[cinematography-shot-language]]
+- 戏的判断（这段戏要干什么）见 `references/directing-read.md`
+- 镜头手段怎么说（景别/运镜/机位）见 `references/cinematography-shot-language.md`

@@ -50,5 +50,5 @@
 
 ## 关联
 
-- 更深的导演判断（场景类型怎么拍、表演怎么行为化、连贯性测试）见 [[directing-engine]]
-- 具体镜头手段（景别/运镜/机位怎么说）见 [[cinematography-shot-language]]
+- 更深的导演判断（场景类型怎么拍、表演怎么行为化、连贯性测试）见 `references/directing-engine.md`
+- 具体镜头手段（景别/运镜/机位怎么说）见 `references/cinematography-shot-language.md`
