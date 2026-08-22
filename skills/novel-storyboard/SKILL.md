@@ -7,6 +7,8 @@ description: |
   组装成一条 Seedance 提示词。段作为可选组织分组（15 秒情绪弧线单元，不跨场）。
   每镜一条分镜图提示词（frame，供 Seedream 出参考图）。产出 storyboard.json + Markdown + 单页评审报告
   （分镜节奏带/分集分镜表/批次单/配音对齐单，报告显示结构化元数据 + seedancePrompt + @绑定图）。
+  内化导演层（directing-read/directing-engine/cinematography-shot-language，自 seedance-20-ytdx），
+  切镜前强制导演读解，景别/运镜/表演有导演判断。
   17 道质量门全部由脚本确定性检查（+ 可选 shot-recipe 卡库第 18 道）；export 每镜出投产 prompt.md。
   零依赖、零 API key，用当前会话额度。
   Use when asked to 分镜、出分镜、镜头表、切镜、storyboard for AI short drama。

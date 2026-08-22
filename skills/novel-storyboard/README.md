@@ -122,6 +122,9 @@ references/
   schema.md              storyboard.json 结构 + 时长约束链
   seedance-prompt.md     Seedance 每镜提示词写法规范 + 摄影参考
   storyboard-pass.md     切镜：分组规则、定时长四步法、导演手感、常见病
+  directing-read.md      导演读解：切镜前的戏判断（转折/视角/权力/潜台词）★内化自 seedance-20-ytdx
+  directing-engine.md    导演引擎：场景怎么拍（意图/景别/表演行为化/连贯性）★内化自 seedance-20-ytdx
+  cinematography-shot-language.md  镜头语言：景别/运镜/机位怎么说 ★内化自 seedance-20-ytdx
   frame.md               分镜图出图的调用契约
   report-style.md        报告的设计约定
 examples/

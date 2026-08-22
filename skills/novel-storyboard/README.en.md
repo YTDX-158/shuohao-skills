@@ -112,6 +112,9 @@ references/
   schema.md              storyboard.json structure + duration chain
   seedance-prompt.md     Seedance per-shot prompt spec + cinematography reference
   storyboard-pass.md     cutting: grouping, duration method, director's feel, pitfalls
+  directing-read.md      director's read: the scene's job before cutting (turn/POV/power/subtext) ★from seedance-20-ytdx
+  directing-engine.md    directing engine: how to shoot a scene (intent/shot-size/behavior/coherence) ★from seedance-20-ytdx
+  cinematography-shot-language.md  shot language: sizes/moves/angles ★from seedance-20-ytdx
   frame.md               storyboard-image call contract
   report-style.md        report design conventions
 examples/
