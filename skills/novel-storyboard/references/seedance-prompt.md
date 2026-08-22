@@ -2,6 +2,8 @@
 
 方法论学自实战样本（真人电影风格 / 写实向半厚涂）+ seedance-20-ytdx 摄影参考，内化成本 skill 自带文档——不依赖任何外部 skill。写每个镜的 `seedancePrompt` 照这份做，结构部分有质量门逐字对账。
 
+> **写之前先想清楚"拍什么、为什么这么拍"**：这份讲"怎么写"（格式/结构/参数）。"这段戏要干什么、每个镜怎么为意图服务、镜头手段怎么说"是导演层的活——`references/directing-read.md`（判断）→ `references/directing-engine.md`（方法）→ `references/cinematography-shot-language.md`（手段）。先做读解再落笔，这里只负责把想好的东西写成格式正确的提示词。
+
 ## 结构（模型手写，validate 逐字对账的部分）
 
 ```text
@@ -77,6 +79,6 @@ c<镜号>,<seconds>s,(空间:<space>)(姿态:<pose>)(位置:<position>)(情绪:<
 | 高反差 | 紧张戏剧 | `hard contrast, stark shadows` |
 
 ### 统摄哲学
-写任何镜前先答：**这段戏要让观众感到什么？**
+"这段戏要让观众感到什么"是**导演层**的判断（见 `references/directing-read.md` 的意图句），这里的相机参数是它的执行面——意图定了，才选对应的焦段/色温/运镜：
 感到紧张 → 手持轻微晃动 + 低照度 + 快速运动；感到亲近 → 中近景 50-85mm + 慢推 + 暖调；感到宏大 → 大远景 ≤24mm + crane 上升 + 冷调。
 所有技术参数是同一个叙事意图的不同侧面——选完互相印证，不各自为政。
