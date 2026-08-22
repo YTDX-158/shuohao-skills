@@ -25,6 +25,17 @@
 
 SKILL.md 的 `name`/`version` 已改，junction 外部名同步改名（仓库 `skills/` 内目录名**不动**）。触发词不变（中文"分镜/出分镜"等照常触发）。
 
+## 管线规则：五段默认跑完（8-22 定）
+
+**五段默认跑完**：`outline → characters → art → script → storyboard` 全跑，前段产物作为后段输入——后段禁止凭空造前段。
+
+为什么：链条是链式的——characters 吃 outline 的人物表、art 吃 outline 的场景清单、script 吃 outline 的分集梗概、storyboard 吃 script 的剧本 + characters/art 的设定图（@绑定/分镜图参考）。跳过前段，后段的资产就是占位，分镜没有真设定图可绑、分镜图没有参考可挂。
+
+**例外必须明说**（跳过哪段、为什么、拿什么替代，不静默跳）：
+1. 用户点名只跑某段 / 只出某样东西
+2. 上游产物**已存在**（如已有 cast.json 就不重跑 characters）
+3. 素材类型**天然缺某段**（如"设计文档+剧本"没有小说 → outline 可不跑；但 characters/art 仍要从人物小传/诡域设计跑，不能一起跳）
+
 ## 当前状态
 
 - 接管机制就位（git 身份 + junction 软链已验证）
