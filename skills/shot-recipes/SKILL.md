@@ -1,6 +1,6 @@
 ---
-name: shot-recipes
-version: 1.0.0
+name: shot-recipes-ytdx
+version: 1.0.0-ytdx.1
 description: |
   AI 视频的镜头语汇卡库，两族卡：配方卡回答「这场戏这一刀该怎么切」（对话、情绪、揭示、进场、
   反应、转场、强调、产品展示、口播九个类目）；技法卡回答「这个手段是什么、什么时候用、

@@ -1,6 +1,6 @@
 ---
-name: novel-characters
-version: 1.10.0
+name: novel-characters-ytdx
+version: 1.10.0-ytdx.1
 description: |
   从小说或短故事里拆出角色表、人物画像、形象提示词、音色提示词，
   并给每个角色出角色设定图（左半身像 + 右全身三视图 + 细节条），产出 JSON + Markdown + 可交互的 report.html。

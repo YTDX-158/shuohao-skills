@@ -1,5 +1,5 @@
 ---
-name: novel-storyboard
+name: novel-storyboard-ytdx
 version: 1.4.0-ytdx.1
 description: |
   给 AI 短剧出分镜（Seedance 一镜一视频版）：镜（每镜独立一次视频生成，时长固定 1–6 秒）是根，

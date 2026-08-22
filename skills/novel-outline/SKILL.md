@@ -1,6 +1,6 @@
 ---
-name: novel-outline
-version: 1.1.0
+name: novel-outline-ytdx
+version: 1.1.0-ytdx.1
 description: |
   把一本小说改编成短剧大纲五件套：改编说明、人物表、爽点表、分集梗概、资产清单，
   产出 outline.json + Markdown + 单页评审报告（KPI 带、关键决策、爽点时间轴、调度矩阵、场景概览、质量门）。
