@@ -282,6 +282,14 @@ eq(paramsOf({ params: { maxShotSeconds: 4 } }).maxShotSeconds, 4, '镜上限可�
   shot.seedancePrompt = shot.seedancePrompt.replace('写实向半厚涂', '油画风格');
   ok(!gate(doc, 'style-phrase').ok, '换掉全片风格声明被拦——同剧画风不许漂');
 }
+{
+  const doc = clone(FIXTURE);
+  delete doc.style; // 没有风格声明就没有头部——必须拦
+  const g = gate(doc, 'style-phrase');
+  ok(!g.ok, '缺顶层 style 被拦');
+  ok(g.detail.includes('缺顶层 style'), '报出缺 style');
+  ok(validateStoryboard(doc, CTX).some((p) => p.includes('缺少 style')), 'validate 也报缺 style');
+}
 // prompt-english
 {
   const doc = clone(FIXTURE);

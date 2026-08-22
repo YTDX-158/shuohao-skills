@@ -390,8 +390,9 @@ export function gateReport(board, ctx = {}) {
   const recipes = ctx.recipes ?? null;
   let recipeRefs = 0;
   // 全片视觉风格声明：自由文本（如「写实向半厚涂」「真人电影风格」），
-  // 出现在每镜 seedancePrompt 头部，同剧画风不许漂
+  // 出现在每镜 seedancePrompt 头部，同剧画风不许漂。缺了直接拦——没有 style 就没有头部声明
   const style = String(board?.style ?? '').trim();
+  if (!style) bad.style.push('缺顶层 style（全片视觉风格声明，如「写实向半厚涂」）');
 
   // 提示词禁人名：outline 的名字 + cast 的名字与别名
   const banned = [];
@@ -641,6 +642,7 @@ export function validateStoryboard(board, ctx = {}) {
   if (!board || typeof board !== 'object') return ['storyboard.json 不是对象'];
 
   if (!String(board.source ?? '').trim()) p('缺少 source（剧名）');
+  if (!String(board.style ?? '').trim()) p('缺少 style（全片视觉风格声明，如「写实向半厚涂」）');
   const eps = board.episodes;
   if (!Array.isArray(eps) || eps.length === 0) {
     p('episodes 为空');
