@@ -1,6 +1,7 @@
 {
   "source": "渡口",
   "style": "写实向半厚涂",
+  "ratio": "16:9",
   "params": {
     "maxSegmentSeconds": 15,
     "minShotSeconds": 1,

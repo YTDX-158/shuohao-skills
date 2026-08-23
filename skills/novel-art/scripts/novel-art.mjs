@@ -149,6 +149,10 @@ export function gateReport(doc, castNames = null) {
 
     // 光照状态 ≥1（仅场景）：AI 换时段是重新生成，不是重新打灯
     if (scenes.includes(s) && (!Array.isArray(s?.lighting) || s.lighting.length === 0)) bad.lighting.push(label);
+    // 主场景仅 1 个光照状态 → 软提示（不拦）：可能是缺常态档（教室只有诡气弥漫的教训）
+    if (s?.primary && Array.isArray(s?.lighting) && s.lighting.length === 1) {
+      console.warn(`⚠️ ${label}（主场景）只有 1 个光照状态——若有日常状态可言（教室类场所），建议补常态档作对照；灾难/纯仪式类场景可忽略`);
+    }
 
     // 空景：反向提示词必须禁人
     const neg = s?.image?.negativePrompt ?? '';

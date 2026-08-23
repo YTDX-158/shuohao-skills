@@ -384,7 +384,7 @@ export function gateReport(board, ctx = {}) {
   const bad = {
     coverage: [], segCap: [], shotLen: [], fit: [], duration: [], crowd: [],
     id: [], size: [], camera: [], english: [], names: [], refs: [],
-    style: [], meta: [], bind: [], dlg: [], notext: [], shotDur: [], recipe: [],
+    style: [], ratio: [], meta: [], bind: [], dlg: [], notext: [], shotDur: [], recipe: [],
   };
   // 配方卡库是可选挂载：ctx.recipes 为空就整门跳过（不是「没有 cut 带 recipe」就跳过）
   const recipes = ctx.recipes ?? null;
@@ -393,6 +393,19 @@ export function gateReport(board, ctx = {}) {
   // 出现在每镜 seedancePrompt 头部，同剧画风不许漂。缺了直接拦——没有 style 就没有头部声明
   const style = String(board?.style ?? '').trim();
   if (!style) bad.style.push('缺顶层 style（全片视觉风格声明，如「写实向半厚涂」）');
+  // 画风对账（源头固化）：给了 --cast 且 cast.json 顶层有 style 时，board.style 必须一致。
+  // 画风源头在 characters Step 0.5（cast.json 顶层 style = 锁定画风名），storyboard 别现场编
+  const castStyle = String(ctx.cast?.style ?? '').trim();
+  if (style && castStyle && style !== castStyle) {
+    bad.style.push(`顶层 style「${style}」与 cast.json 顶层 style「${castStyle}」不一致——画风源头在 characters Step 0.5，用它，别现场编`);
+  }
+
+  // 分镜图比例：锁定的视频比例（outline Step 0 定，seed 时用 --outline 从 outline.json 顶层带出）。
+  // 缺了直接拦——分镜关键帧与 novel-assets 出图包都按它走。frame 提示词结尾应带对应比例短语
+  const ratio = String(board?.ratio ?? '').trim();
+  const ratioPhrase = ratio === '9:16' ? '9:16' : ratio === '16:9' ? '16:9' : '';
+  if (!ratio) bad.ratio.push('缺顶层 ratio（锁定的视频比例 9:16 / 16:9；seed 时用 --outline 带出）');
+  else if (!ratioPhrase) bad.ratio.push(`顶层 ratio「${ratio}」不合法（只认 9:16 / 16:9）`);
 
   // 提示词禁人名：outline 的名字 + cast 的名字与别名
   const banned = [];
@@ -462,6 +475,10 @@ export function gateReport(board, ctx = {}) {
         const frame = String(cut?.frame ?? '');
         if (!frame.trim()) bad.english.push(`${cid} 的分镜图提示词为空`);
         if (CJK.test(frame)) bad.english.push(`${cid} 的分镜图提示词混入了非英文`);
+        // 分镜图比例自洽：frame 提示词应带锁定的比例短语（源头带比例）
+        if (ratioPhrase && frame && !frame.toLowerCase().includes(ratioPhrase)) {
+          bad.ratio.push(`${cid} 的分镜图提示词缺锁定比例「${ratioPhrase}」（分镜关键帧比例 = 视频比例）`);
+        }
         for (const name of banned) {
           if (frame.includes(name)) bad.names.push(`${cid} 的分镜图提示词出现角色名「${name}」`);
         }
@@ -616,7 +633,8 @@ export function gateReport(board, ctx = {}) {
   add('shot-duration', '镜号行 c<镜号>,<秒>s 的秒数 = seconds 字段（每镜固定时长）', eps.length > 0 && bad.shotDur.length === 0, bad.shotDur.join('；'));
   add('dialogue-lang', '认领节拍的台词逐字进 seedancePrompt（按剧本原始语言，不改写）', bad.dlg.length === 0, script ? bad.dlg.join('；') : SKIP_SCRIPT);
   add('notext', '每镜提示词带无字幕约束（画面无文字/不出现任何文字字幕）', bad.notext.length === 0, bad.notext.join('；'));
-  add('style-phrase', `每镜提示词头部风格声明统一（${style || '缺 style'} + 画面无文字 + 无BGM）——同剧画风不许漂`, bad.style.length === 0, bad.style.join('；'));
+  add('style-phrase', `每镜提示词头部风格声明统一（${style || '缺 style'} + 画面无文字 + 无BGM）+ 对账 cast.json 顶层 style（给了 --cast 时）——同剧画风不许漂`, bad.style.length === 0, bad.style.join('；'));
+  add('shot-ratio', '分镜图比例 = 锁定视频比例（顶层 ratio 存在 + 每镜 frame 带比例短语）', bad.ratio.length === 0, bad.ratio.join('；'));
   add('prompt-english', '分镜图提示词全英文且非空', bad.english.length === 0, bad.english.join('；'));
   add('prompt-no-names', '分镜图提示词不含角色名', bad.names.length === 0, banned.length ? bad.names.join('；') : SKIP_NAMES);
   add('bind', '@绑定全部 ∈ 资产库（角色/道具设定图名字）', bad.bind.length === 0, assets.size ? bad.bind.join('；') : SKIP_BIND);
@@ -643,6 +661,7 @@ export function validateStoryboard(board, ctx = {}) {
 
   if (!String(board.source ?? '').trim()) p('缺少 source（剧名）');
   if (!String(board.style ?? '').trim()) p('缺少 style（全片视觉风格声明，如「写实向半厚涂」）');
+  if (!String(board.ratio ?? '').trim()) p('缺少 ratio（锁定的视频比例 9:16 / 16:9，seed 时 --outline 带出）');
   const eps = board.episodes;
   if (!Array.isArray(eps) || eps.length === 0) {
     p('episodes 为空');
@@ -692,7 +711,7 @@ export function validateStoryboard(board, ctx = {}) {
 /* seed — 从 script.json 确定性预填                                      */
 /* ------------------------------------------------------------------ */
 
-export function seedFromScript(script, epRange = null) {
+export function seedFromScript(script, epRange = null, ratio = '') {
   const expanded = expandScript(script);
   const inRange = (n) => !epRange || (n >= epRange[0] && n <= epRange[1]);
   const episodes = [];
@@ -717,7 +736,9 @@ export function seedFromScript(script, epRange = null) {
       })),
     });
   }
-  return { source: script?.source ?? '', episodes };
+  const out = { source: script?.source ?? '', episodes };
+  if (ratio) out.ratio = ratio;
+  return out;
 }
 
 /* ------------------------------------------------------------------ */
@@ -809,6 +830,7 @@ const GATE_LABELS_EN = {
   'dialogue-lang': 'Claimed dialogue appears verbatim in seedancePrompt (original script language)',
   'notext': 'Every shot prompt carries the no-text constraint',
   'style-phrase': 'Shot prompt header style declaration consistent — one drama, one look',
+  'shot-ratio': 'Storyboard frame ratio matches the locked video ratio',
   'prompt-english': 'Frame prompts are English and non-empty',
   'prompt-no-names': 'Frame prompts carry no character names',
   'bind': 'Every @binding is an asset (character / prop sheet name)',
@@ -1092,6 +1114,16 @@ export function renderHtml(board, ctx = {}) {
   const params = stats.params;
   const fmtMin = t.fmtMin;
 
+  // ---- 分镜图版式跟随源头比例（board.ratio，outline Step 0 定、seed 带出）----
+  // 9:16 → 竖卡限宽居中（width:100% 会撑到 ~1600px 高，必须限宽）；16:9 → 横卡占满；
+  // 缺省/其他 → contain 兜底，任何比例完整显示不裁
+  const ratio = String(board?.ratio ?? '').trim();
+  const frameImg = ratio === '9:16'
+    ? 'width:100%;aspect-ratio:9 / 16;object-fit:contain;max-width:420px;margin:0 auto;'
+    : ratio === '16:9'
+      ? 'width:100%;aspect-ratio:16 / 9;object-fit:contain;'
+      : 'width:100%;max-width:480px;margin:0 auto;object-fit:contain;';
+
   const SIZE_ALPHA = { 'extreme-wide': 0.25, wide: 0.4, medium: 0.58, close: 0.78, 'extreme-close': 1 };
 
   // ---- 01 分镜节奏带：段是粗分隔的组，组内每个分镜一段色块 ----
@@ -1353,7 +1385,7 @@ section.top-sec{margin-top:34px}
 .seg-h b{font:500 14px/1 var(--mono);color:var(--seal)}
 .sec-badge{font:500 11px/1 var(--mono);border:1px solid var(--seal);color:var(--seal);border-radius:99px;padding:2px 8px}
 .beatsref{margin-left:auto;font-size:10.5px;color:var(--ink-3)}
-.frame{width:100%;aspect-ratio:16/9;object-fit:cover;border:1px solid var(--rule-2);border-radius:2px;
+.frame{${frameImg}border:1px solid var(--rule-2);border-radius:2px;
   cursor:zoom-in;display:block;background:var(--side)}
 .frame.ph{display:flex;flex-direction:column;gap:6px;padding:10px 12px;cursor:default;overflow:hidden}
 .frame.ph b{font:500 10px/1 var(--sans);letter-spacing:.14em;color:var(--ink-3)}
@@ -1367,7 +1399,7 @@ section.top-sec{margin-top:34px}
 .fcell-h .copy.mini{margin:0;flex:none}
 .frame.ph .fprompt{font:400 10.5px/1.4 var(--mono);color:var(--ink-2);white-space:pre-wrap;word-break:break-word;display:block;
   -webkit-line-clamp:none;-webkit-box-orient:vertical;overflow:visible}
-.subf{width:100%;aspect-ratio:16/9;object-fit:cover;border:1px solid var(--rule-2);border-radius:2px;
+.subf{${frameImg}border:1px solid var(--rule-2);border-radius:2px;
   cursor:zoom-in;display:block;background:var(--side)}
 .subf.ph{display:flex;align-items:center;justify-content:center;cursor:default;
   font:500 10px/1 var(--sans);color:var(--ink-3);letter-spacing:.08em}
@@ -1602,6 +1634,8 @@ document.querySelector('.expo').addEventListener('click', (e) => {
 const USAGE = `novel-storyboard.mjs — novel-storyboard skill 的确定性工具（分镜）
 
   seed <script.json> [--eps 1-3]              从剧本预填节拍工作底稿（打印到 stdout）
+       [--outline <outline.json>]            从 outline.json 顶层 ratio 自动带出锁定比例
+       [--ratio 9:16]                         手动指定比例（优先于 --outline 带出）
   validate <sb.json> --script <script.json>   校验；有违规逐条打印并 exit 1
            [--outline] [--cast] [--art]       outline/cast 查提示词人名；art 只管显示名字
            [--shots <卡片目录>]                挂载镜头配方卡库，开 shot-recipe 门（不给就跳过）
@@ -1666,7 +1700,7 @@ function main(argv) {
 
   if (cmd === 'seed') {
     const [path] = rest;
-    if (!path) throw new Error('用法：seed <script.json> [--eps 1-3]');
+    if (!path) throw new Error('用法：seed <script.json> [--eps 1-3] [--outline <outline.json>] [--ratio 9:16]');
     const range = flag(rest, '--eps');
     let epRange = null;
     if (range) {
@@ -1674,7 +1708,13 @@ function main(argv) {
       if (!m) throw new Error('--eps 形如 3 或 1-6');
       epRange = m[2] ? [Number(m[1]), Number(m[2])] : [Number(m[1]), Number(m[1])];
     }
-    console.log(JSON.stringify(seedFromScript(readJson(path), epRange), null, 2));
+    // 比例源头固化：--ratio 手动优先；没给就从 outline.json 顶层 ratio 自动带出
+    let ratio = String(flag(rest, '--ratio') ?? '').trim();
+    if (!ratio) {
+      const outlinePath = flag(rest, '--outline');
+      if (outlinePath) ratio = String(readJson(outlinePath)?.ratio ?? '').trim();
+    }
+    console.log(JSON.stringify(seedFromScript(readJson(path), epRange, ratio), null, 2));
     return;
   }
 

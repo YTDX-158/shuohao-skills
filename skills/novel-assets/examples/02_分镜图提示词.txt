@@ -1,0 +1,193 @@
+你是一名美术总监，为短剧《全球诡异时代》生成全部 36 张分镜图（关键帧）。
+
+【统一要求】
+1. 所有分镜图统一比例 9:16（竖屏），统一画风「暗黑写实电影感」，与上面生成的设定图保持同一世界观。
+2. 每一镜都引用你上面生成的设定图：角色的脸/衣服用对应角色设定图，环境用对应场景设定图，道具用对应道具设定图。
+3. 我已在每镜标注参考，照着引用你刚生成的那张设定图，不要自己另造形象。
+4. 按 E01-01 → E01-11 顺序依次生成，一镜一张，生成完再生成下一镜。
+5. 画面干净，无文字、无水印、无边框。
+
+【每镜提示词】
+
+【E01-01 第01镜】
+命名：E01-01_f1.png
+引用设定图：【城市灾难蒙太奇】【裂口女】
+画面：handheld extreme wide shot of a rainy city crossroad, pedestrians with umbrellas crossing, a red-dress woman in the center splitting her mouth open and swallowing a passerby, panic erupts, desaturated scene with only her red dress in color, sin-city contrast
+
+【E01-01 第02镜】
+命名：E01-01_f2.png
+引用设定图：【城市灾难蒙太奇】【罗刹鬼】
+画面：crane up extreme wide shot from street level rising to a colossal demon towering over a collapsing city skyline, blood-red cloud forming a giant face, apocalyptic scale, dark cinematic
+
+【E01-01 第03镜】
+命名：E01-01_f3.png
+引用设定图：【城市灾难蒙太奇】
+画面：static extreme wide shot montage of falling landmarks, tokyo tower collapsing, statue of liberty wrapped in vines, pyramid cracking open, mountains of skulls, apocalyptic dark cinematic
+
+【E01-02 第04镜】
+命名：E01-02_f1.png
+引用设定图：【城市灾难蒙太奇】
+画面：static extreme wide shot of a mountain of human skulls with hollow eye sockets staring at the sky, grim apocalyptic atmosphere
+
+【E01-02 第05镜】
+命名：E01-02_f2.png
+引用设定图：【城市灾难蒙太奇】【妍会长】
+画面：dolly-in wide shot moving toward a female guild leader standing alone facing a tide of ghosts, two paper figures one red one white rushing out from her sides, dawn light breaking, epic dark fantasy
+
+【E01-02 第06镜】
+命名：E01-02_f3.png
+引用设定图：【城市灾难蒙太奇】【林风】
+画面：static medium shot of a baby lying on a bed, four relics laid out before it, blood-stained polka-dot bow broken dagger old pocket watch damaged mask, soft warm light, intimate hushed mood
+
+【E01-03 第07镜】
+命名：E01-03_f1.png
+引用设定图：【城市灾难蒙太奇】【林风】
+画面：push-in medium shot closing on a baby hand reaching past a broken dagger to grasp a blood-stained polka-dot bow, soft warm light, intimate fated mood
+
+【E01-03 第08镜】
+命名：E01-03_f2.png
+引用设定图：【城市灾难蒙太奇】【林风】
+画面：static close-up of a baby hand tightly gripping a blood-stained polka-dot cloth bow, dried blood on the old fabric clearly visible, soft warm light, fated moment
+
+【E01-03 第09镜】
+命名：E01-03_f3.png
+引用设定图：【城市灾难蒙太奇】
+画面：tilt extreme wide shot from high above descending into a bustling academy campus, title card liucheng spirit academy, transitional establishing shot
+
+【E01-04 第10镜】
+命名：E01-04_f1.png
+引用设定图：【柳城御诡师学院教室】【林风】【波点蝴蝶结】
+画面：static medium shot of a young male student sitting by a classroom window holding a small polka-dot cloth bow, speaking softly, other students seated, dark fantasy academy
+
+【E01-04 第11镜】
+命名：E01-04_f2.png
+引用设定图：【柳城御诡师学院教室】【林风】【波点蝴蝶结】
+画面：slow push-in close-up of a young male student raising a polka-dot cloth bow to his eyes, eyes brightening with expectation, dark fantasy academy classroom
+
+【E01-04 第12镜】
+命名：E01-04_f3.png
+引用设定图：【柳城御诡师学院教室】【楚楚】
+画面：static medium shot of a young woman leaning over a desk toward a seated young man, hands clasped at her cheek, blushing tilting her head, height difference showing her leaning down, dark fantasy academy classroom
+
+【E01-04 第13镜】
+命名：E01-04_f4.png
+引用设定图：【柳城御诡师学院教室】【楚楚】
+画面：slow push-in close-up of a young woman with hands clasped at her cheek, blushing tilting her head in a coquettish plea, dark fantasy academy classroom
+
+【E01-05 第14镜】
+命名：E01-05_f1.png
+引用设定图：【柳城御诡师学院教室】【林风】【楚楚】
+画面：slow push-in medium shot of a calm seated young man speaking, a young woman mid-bend freezing for half a beat, power shifting, dark fantasy academy classroom
+
+【E01-05 第15镜】
+命名：E01-05_f2.png
+引用设定图：【柳城御诡师学院教室】【楚楚】【胖子】
+画面：static medium shot of a young woman standing straight with arms crossed huffing, a heavyset young man leaning in with a sycophantic grin, dark fantasy academy classroom
+
+【E01-05 第16镜】
+命名：E01-05_f3.png
+引用设定图：【柳城御诡师学院教室】【楚楚】【胖子】【林风】
+画面：static medium shot of a young woman rolling her eyes, a heavyset young man freezing then turning to glare at a calm young man, dark fantasy academy classroom
+
+【E01-06 第17镜】
+命名：E01-06_f1.png
+引用设定图：【柳城御诡师学院教室】【红色纸人】
+画面：low angle static wide shot of a red paper effigy woman appearing at a classroom door, red qipao painted paper face eerie makeup, paper eyes slowly turning, tall heels, folk horror dark fantasy
+
+【E01-06 第18镜】
+命名：E01-06_f2.png
+引用设定图：【柳城御诡师学院教室】【红色纸人】
+画面：static medium shot of a red paper effigy woman standing at a classroom lectern declaring the ceremony begins, paper hand raised, dark fantasy folk horror
+
+【E01-06 第19镜】
+命名：E01-06_f3.png
+引用设定图：【柳城御诡师学院教室】【红色纸人】
+画面：static wide shot of a classroom filling with black ghostly mist, red paper effigy at lectern raising hand, students relics glowing and shifting, dark fantasy folk horror
+
+【E01-07 第20镜】
+命名：E01-07_f1.png
+引用设定图：【柳城御诡师学院教室】【楚楚】【胖子】
+画面：static medium shot of a young woman gasping at a glowing ring, a heavyset young man staring down at a severed finger oozing dark red blood, dark fantasy classroom
+
+【E01-07 第21镜】
+命名：E01-07_f2.png
+引用设定图：【柳城御诡师学院教室】【胖子】【红色纸人】
+画面：static close-up of a heavyset young man holding up a severed finger looking nervously at a red paper effigy teacher, dark fantasy classroom
+
+【E01-07 第22镜】
+命名：E01-07_f3.png
+引用设定图：【柳城御诡师学院教室】【胖子】【断指】
+画面：push-in extreme close-up of a severed finger segment writhing and merging into a thumb, flesh fusing, dark red blood, unsettling body horror
+
+【E01-08 第23镜】
+命名：E01-08_f1.png
+引用设定图：【柳城御诡师学院教室】【胖子】
+画面：static medium shot of a heavyset young man throwing his head back in triumphant laughter, dark fantasy academy classroom
+
+【E01-08 第24镜】
+命名：E01-08_f2.png
+引用设定图：【柳城御诡师学院教室】【楚楚】【芭比娃娃】
+画面：static medium shot of a young woman hugging a barbie-style doll whose eyes glow blood-red, triumphant proud look toward a young man
+
+【E01-08 第25镜】
+命名：E01-08_f3.png
+引用设定图：【柳城御诡师学院教室】【林风】【波点蝴蝶结】
+画面：static close-up of a young male student looking down at a polka-dot cloth bow in his hand, whispering softly, hopeful
+
+【E01-09 第26镜】
+命名：E01-09_f1.png
+引用设定图：【柳城御诡师学院教室】【波点蝴蝶结】
+画面：push-in extreme close-up of a polka-dot cloth bow with white frost forming on its surface, magical moment
+
+【E01-09 第27镜】
+命名：E01-09_f2.png
+引用设定图：【柳城御诡师学院教室】【波点蝴蝶结】【童童】
+画面：static extreme close-up of a polka-dot cloth bow freezing over, ice crystals spreading along edges, cold mist pouring out, a small white-dress girl spirit appearing in the frost
+
+【E01-09 第28镜】
+命名：E01-09_f3.png
+引用设定图：【柳城御诡师学院教室】【童童】【林风】
+画面：slow push-in medium shot of a small white-dress girl spirit appearing amid frost, a young man joyfully exclaiming, the girl speaking coldly
+
+【E01-10 第29镜】
+命名：E01-10_f1.png
+引用设定图：【柳城御诡师学院教室】【红色纸人】
+画面：static medium shot of a red paper effigy speaking gravely, dark fantasy classroom
+
+【E01-10 第30镜】
+命名：E01-10_f2.png
+引用设定图：【柳城御诡师学院教室】【楚楚】
+画面：slow push-in close-up of a young woman stunned, dark fantasy classroom
+
+【E01-10 第31镜】
+命名：E01-10_f3.png
+引用设定图：【柳城御诡师学院教室】【胖子】【童童】
+画面：static medium shot of a heavyset young man forcing a dry laugh, a small white-dress girl spirit casting a cold glance, him flinching into silence, oppressive
+
+【E01-10 第32镜】
+命名：E01-10_f4.png
+引用设定图：【柳城御诡师学院教室】【林风】
+画面：static medium shot of a young man with a flash of white light as a system notification rings in his mind, awakening moment
+
+【E01-11 第33镜】
+命名：E01-11_f1.png
+引用设定图：【柳城御诡师学院教室】
+画面：static wide shot through a classroom window of churning blood-red clouds and distant ghost howls, window panes rattling, impending crisis
+
+【E01-11 第34镜】
+命名：E01-11_f2.png
+引用设定图：【柳城御诡师学院教室】【红色纸人】
+画面：static medium shot of a red paper effigy woman looking out the window with a grave expression, dark fantasy classroom
+
+【E01-11 第35镜】
+命名：E01-11_f3.png
+引用设定图：【柳城御诡师学院教室】【林风】【童童】
+画面：slow push-in close-up of a young man gripping a polka-dot cloth bow with a resolute look, a small white-dress girl spirit standing quietly at his side
+
+【E01-11 第36镜】
+命名：E01-11_f4.png
+引用设定图：【柳城御诡师学院教室】
+画面：static extreme wide shot of a giant blood-red eye slowly opening in churning blood clouds, looming over a city below, overwhelming ominous presence
+
+以上 36 张分镜图全部生成完即可，先不要打包，等说明.txt 统一指挥交付。
+zip 内每张图按我给的命名保存（段号_镜号.png），文件名不要改。

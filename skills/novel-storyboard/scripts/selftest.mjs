@@ -113,7 +113,7 @@ eq(paramsOf({ params: { maxShotSeconds: 4 } }).maxShotSeconds, 4, '镜上限可�
 {
   const gates = gateReport(FIXTURE, CTX);
   ok(gates.every((g) => g.ok), '样例带全部上游全部门通过');
-  eq(gates.length, 18, '十七道硬门 + shot-recipe 可选');
+  eq(gates.length, 19, '十八道硬门 + shot-recipe 可选');
 }
 {
   const gates = gateReport(FIXTURE, {});
@@ -289,6 +289,39 @@ eq(paramsOf({ params: { maxShotSeconds: 4 } }).maxShotSeconds, 4, '镜上限可�
   ok(!g.ok, '缺顶层 style 被拦');
   ok(g.detail.includes('缺顶层 style'), '报出缺 style');
   ok(validateStoryboard(doc, CTX).some((p) => p.includes('缺少 style')), 'validate 也报缺 style');
+}
+// shot-ratio — 分镜图比例 = 锁定视频比例（顶层 ratio 存在 + frame 带比例短语）
+{
+  const doc = clone(FIXTURE);
+  delete doc.ratio;
+  const g = gate(doc, 'shot-ratio');
+  ok(!g.ok, '缺顶层 ratio 被拦');
+  ok(g.detail.includes('缺顶层 ratio'), '报出缺 ratio');
+}
+{
+  const doc = clone(FIXTURE);
+  doc.ratio = '9:16'; // 样例 frame 都写 16:9，与锁定比例不匹配
+  const g = gate(doc, 'shot-ratio');
+  ok(!g.ok, 'frame 比例与锁定比例不一致被拦');
+  ok(g.detail.includes('9:16'), '报出锁定比例');
+}
+{
+  const doc = clone(FIXTURE);
+  doc.ratio = '4:3'; // 只认 9:16 / 16:9
+  ok(!gate(doc, 'shot-ratio').ok, '不合法 ratio 被拦');
+}
+// style 对账：board.style 必须与 cast.json 顶层 style 一致（画风源头在 characters）
+{
+  const doc = clone(FIXTURE);
+  const ctx = { ...CTX, cast: { ...CTX.cast, style: '暗黑写实电影感' } };
+  const g = gate(doc, 'style-phrase', ctx);
+  ok(!g.ok, 'board.style 与 cast.style 不一致被拦——画风源头在 characters Step 0.5');
+  ok(g.detail.includes('不一致'), '报出对账不一致');
+}
+{
+  const doc = clone(FIXTURE);
+  doc.style = '暗黑写实电影感'; // 脱离 cast 源头另起炉灶
+  ok(!gate(doc, 'style-phrase').ok, '顶层 style 脱离 cast 源头被拦');
 }
 // prompt-english
 {
@@ -558,6 +591,8 @@ eq(seeded.episodes[0].seedScenes[0].beats.length, 13, '底稿带全部节拍');
 ok(seeded.episodes[0].seedScenes[0].beats[0].seconds > 0, '每拍带秒数');
 eq(seedFromScript(SCRIPT, [2, 3]).episodes.map((e) => e.ep).join(','), '2,3', '--eps 区间过滤');
 eq(seedFromScript({}).episodes.length, 0, '空剧本不崩');
+eq(seedFromScript(SCRIPT, null, '9:16').ratio, '9:16', 'seed 带出锁定比例（源头固化）');
+ok(!('ratio' in seedFromScript(SCRIPT)), '没给比例不带 ratio 字段');
 
 /* ---------------- slug / 枚举 ---------------- */
 
@@ -589,7 +624,7 @@ ok(html.includes('镜头节奏带'), '01 镜头节奏带');
 ok(html.includes('分集分镜表'), '02 分集分镜表');
 ok(html.includes('生成批次单'), '03 生成批次单');
 ok(html.includes('配音对齐单'), '04 配音对齐单');
-ok(html.includes('✓ 质量门 18 / 18'), '页眉徽章全绿');
+ok(html.includes('✓ 质量门 19 / 19'), '页眉徽章全绿');
 ok(html.includes('class="rseg"'), '节奏带按段分组（粗分隔）');
 ok(html.includes('#seg-E01-01'), '节奏带段可跳转');
 ok(html.includes('主分镜图 · #1 未生成'), '主分镜图缺图时显示占位不装有');
@@ -618,6 +653,23 @@ ok(html.includes('老周'), 'html 里 ID 换成名字');
   ok(!withFrame.includes('未生成'), '有图时不再显示占位');
   ok(withFrame.includes('class="subs"'), '图出全时保留子分镜条');
 }
+// 分镜图版式跟随源头比例（report 排版 = board.ratio）
+{
+  ok(html.includes('aspect-ratio:16 / 9'), '16:9 的 board → 横卡 aspect（占满不限宽）');
+  ok(!html.includes('max-width:420px'), '横卡不限宽');
+}
+{
+  const doc = { ...clone(FIXTURE), ratio: '9:16' };
+  const h = renderHtml(doc, CTX);
+  ok(h.includes('aspect-ratio:9 / 16'), '9:16 的 board → 竖卡 aspect');
+  ok(h.includes('max-width:420px'), '竖卡限宽居中（防超高）');
+}
+{
+  const doc = clone(FIXTURE); delete doc.ratio;
+  const h = renderHtml(doc, CTX);
+  ok(!h.includes('aspect-ratio:9 / 16') && !h.includes('aspect-ratio:16 / 9'), '无 ratio → 不锁分镜图 aspect');
+  ok(h.includes('object-fit:contain'), '无 ratio → contain 兜底（任何比例完整显示）');
+}
 // 病灶横幅
 {
   const doc = clone(FIXTURE);
@@ -643,7 +695,7 @@ ok(html.includes('老周'), 'html 里 ID 换成名字');
   const en = renderHtml(FIXTURE, { ...CTX, lang: 'en' });
   ok(en.includes('<html lang="en">'), 'en 报告的 html lang 属性跟着语言走');
   ok(en.includes('Export JSON'), 'en 界面：导出按钮英文');
-  ok(en.includes('Quality gates 18 / 18'), 'en 界面：页眉徽章英文');
+  ok(en.includes('Quality gates 19 / 19'), 'en 界面：页眉徽章英文');
   ok(en.includes('Shot rhythm strip'), 'en 界面：节奏带节标题英文');
   ok(en.includes('Segment cards'), 'en 界面：分镜表节标题英文');
   ok(en.includes('Generation batches'), 'en 界面：批次节标题英文');

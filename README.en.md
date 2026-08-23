@@ -22,6 +22,7 @@ Here is the whole pipeline — **the outline converges the structure; script, sc
 | [**novel-art**](skills/novel-art/README.en.md) | Art bibles for AI production (scenes + narrative props): consistency anchors, lighting & state variants, scale references, no-people/no-hands white plates. Seeds from outline.json; all 11 quality gates script-checked |
 | [**novel-script**](skills/novel-script/README.en.md) | Screenwriting for AI short drama: scenes + beat flow (action beats alternating with dialogue lines), per-episode duration deterministically estimated from reading speed, a gated cold-open hook in the first 3 beats, a per-character line book with voice prompts that feeds straight into TTS. All 10 quality gates script-checked |
 | [**novel-storyboard**](skills/novel-storyboard/README.en.md) | Storyboarding for AI short drama: segments (one generation, ≤15s) → cuts (2–5s hard gate) → keyframes (master pinned at 0.00s, sub-frames at their cut marks), with MiniMax H3 prompt alignment and cut times audited verbatim; frames actually generated with the design sheets as references, plus one-command H3 production packs. All 17 quality gates script-checked (the 17th audits shot-recipes cards when the library is mounted) |
+| [**novel-assets**](skills/novel-assets/README.en.md) | The image-generation loop (stage 6): packages the already-written `image.sheet` and `frame` prompts from cast/art/storyboard into "send-to-GPT" task texts, then places the returned images and re-renders reports. No prompt writing, no image generation (manual GPT web UI), no JSON changes. Three commands: run / place / render |
 
 Off to the side of the pipeline there is a **shot vocabulary library** that none of the five skills is required to mount:
 
@@ -31,7 +32,7 @@ Off to the side of the pipeline there is a **shot vocabulary library** that none
 
 **Every skill renders its report in English too** — reports default to a Chinese UI; pass `--lang en` to `render` for a fully English report (data content stays as authored).
 
-Point it at a novel and you get all five:
+Point it at a novel and you get all six:
 
 **novel-outline · short-drama adaptation outline**
 

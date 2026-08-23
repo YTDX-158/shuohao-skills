@@ -1,5 +1,229 @@
 # Changelog
 
+## 光照"常态档"机制 — novel-art 1.4.0 + novel-script 1.4.0 — 2026-08-23
+
+**全球诡异时代闭环审片发现：教室场景（S02）只有「启灵仪式·诡气弥漫」一个光照状态——它是全剧最长场（44 拍）且没有日常对照，观感"额外阴森"。源头链：art 光照从剧本戏份反推 → 剧本只有启灵戏 → 只反推出一个状态。防下次的机制。**
+
+- **novel-art 1.4.0**：
+  - `scene-pass.md`：主场景配**常态档**（场景不带事件时的样子，教室=正常上课）——即使戏里只有事件状态也建；边界：灾难/纯仪式类**无日常可言不强求**
+  - validate **软提示（不拦）**：主场景仅 1 个光照状态 → `console.warn` 建议补常态档
+  - SKILL Step 2 提一句
+- **novel-script 1.4.0**：
+  - `script-pass.md` 硬规则 9：主场景别全程一个情绪，留常态→突变拍（给 art 光照反推留原料）；**不为对照硬塞日常**
+  - SKILL Step 2 提一句
+- **落点关键**：指引进 **references 细则文件**（子代理执行时读的是它），不是只写 SKILL——子代理不读 SKILL，写 SKILL 就落空（同"软审靠钩子"的教训）
+- 验证：art selftest 146 / script selftest 154；渡口 art validate 软提示生效（渡口栈桥仅 1 光照 → warn）且门照过
+
+---
+
+## novel-storyboard v1.7.0 — report 排版跟随源头比例（分镜图竖卡不裁）— 2026-08-23
+
+**闭环验收发现：分镜图 9:16 竖图在 report 里被 .frame 硬编码 16/9 + object-fit:cover 上下裁切——"源头带比例"的第三个消费端（frame 提示词、novel-assets 之后是 report 排版）漏接了。**
+
+- **renderHtml 读 board.ratio → 动态生成 .frame/.subf 的 aspect-ratio**
+- 9:16 → 竖卡限宽居中（width:100% 会撑到 ~1600px 高，必须 `max-width:420px`）；16:9 → 横卡占满；缺省/其他 → **contain 兜底**（任何比例完整显示，且 GPT 实际出图比例微差也不裁）
+- `.subf`（副分镜图）一起改；`.bimg`（批次单场景图，art 横图）保持 16:9 不动
+- selftest +6（竖卡 aspect/限宽、横卡、无 ratio 兜底）；全球诡异时代 report 重渲验收：分镜图 contain 完整显示、36 张全在
+- 版本：novel-storyboard `1.6.0 → 1.7.0`
+
+**教训**：源头带比例要对齐**所有消费端**——frame 提示词、出图包、report 排版。报告是最容易漏的（视觉层，不到真出图看不到）。验收标准就是"分镜图完整显示不裁切"。
+
+---
+
+## novel-assets v1.5.0 — render 补 report 修复（自动落盘）— 2026-08-23
+
+**闭环实测发现的 bug：novel-assets render 转发各 skill 的 render --html 命令，但用 stdio inherit 只打印 stdout 不写文件——各 skill 的 render 本来就靠用户重定向（`> report.html`）落盘，所以 novel-assets 的"补 report"从不更新文件。全球诡异时代 52 张交付图 place 归位后，report 没图。**
+
+- **runScript 捕获 stdout**（stdio: `['inherit','pipe','inherit']` + encoding）返回 `{status, stdout}`——stderr 保持继承，警告/错误仍显示
+- **render 命令加 report() 辅助**：捕获 HTML 自动落盘 `cast-report.html` / `art-report.html` / `storyboard-report.html`（`--out` 指定目录，默认当前目录）
+- 实测：全球诡异时代 52 张图（16 设定图 + 36 分镜图）归位 + render 自动落盘 ✓
+- 版本：novel-assets `1.4.0 → 1.5.0`
+
+**教训**：novel-assets 初次实现时 render 只"转发"没实测——转发链要端到端验一次（stdout → 落盘）。闭环验收标准（report 每张图都显示）本身就是测试，跑一次就能抓到。
+
+---
+
+## 源头固化 v1.3 — 比例链 + 画风链（4 skill 联动）— 2026-08-23
+
+**流程审视发现：novel-assets 的 --ratio 默认写死 9:16（源头没固化，读不到锁定比例），storyboard 的 style 现场编（validate 只查同剧内部一致，不查跟 characters 锁定画风一致）。两条链都停在"软机制"（查项目记忆靠 Claude 自觉），要推到脚本可校验。**
+
+- **novel-outline 1.3.0**：Step 0 定比例 → 写 outline.json 顶层 `ratio`（比例链源头固化起点）
+- **novel-characters 1.13.0**：Step 0.5 锁定画风名 → assemble `--style` 传锁定名（非预设名）→ cast.json 顶层 `style` 固化（画风链源头）
+- **novel-storyboard 1.6.0**：顶层 `ratio` 字段 + seed `--outline` 自动带出 + Step 2 顶层两字段源头带（style 从 cast.json 取）+ validate 新门 **shot-ratio**（缺顶层 ratio / 值不合法 / 每镜 frame 带锁定比例短语自洽）+ **style-phrase 对账 cast.json 顶层 style**（给了 `--cast` 时不一致拦）
+- **novel-assets 1.3.0**：`--ratio` 默认取 storyboard.json 顶层 ratio（兜底 9:16），不再写死
+- 渡口样例同步（outline/cast/storyboard 补 ratio/style 固化字段，互相自洽）
+- selftest 全绿：outline 220 / characters 330 / art 146 / script 154 / storyboard 253 / assets 63
+
+**教训**：源头带的"源头"必须固化进中间产物 JSON（outline/cast/storyboard），下游才读得到——软机制（查项目记忆）只能靠 Claude 自觉，固化后脚本可校验。画风有 cast.json 源头、比例这次补上 outline.json 源头，两条链对称。
+
+---
+
+## 源头固化 v1.3 补丁 — chars 半成品修复 + style 语义分工 + assets 警告 — 2026-08-23
+
+**审视发现三个遗留：① chars 1.13.0 是半成品——SKILL 让 assemble --style 传锁定画风名，但 validate 命令还强制 style ∈ 渲染预设，锁定名一 validate 就挂；② art 的 style 字段语义是渲染维度（realistic/ghibli），chars 的 style 是锁定画风名，容易混写导致 art validate 挂；③ novel-assets 缺 ratio/style 静默兜底 9:16/写实，独立跑 storyboard 时可能错且无声。**
+
+- **novel-characters 1.14.0**：validate 命令放宽——顶层 style 非渲染预设时 console.warn（"按锁定画风名处理"）不拦；validateCast 的 style-match 门本来就对非预设跳过
+- **novel-art 1.3.0**：SKILL Step 0 补 style 字段语义分工——art.json 顶层 style = 渲染维度预设（validate 只认 realistic/ghibli），cast.json 顶层 style = 锁定画风名（画风锚，别写进 art.style）
+- **novel-assets 1.4.0**：run 缺 storyboard.json 顶层 ratio/style 时 console.warn（防独立跑 storyboard 的静默兜底）
+- 规则记忆 feedback_pipeline_preflight_params：补 style 三字段语义分工表
+- selftest 全绿：chars 330 / assets 63 / 其余同 v1.3（outline 220 / art 146 / script 154 / storyboard 253）
+
+**教训**：改 SKILL 让上游产出新格式（cast.style=锁定名），必须先确认下游脚本是否接受——chars validate 的 SUPPORTED_STYLES 检查拦住了，说明"改产出格式"要连消费端一起改，否则就是半成品。
+
+---
+
+## novel-storyboard v1.5.0 — 源头带比例（分镜关键帧跟视频同比例）— 2026-08-23
+
+**流程审视发现：storyboard 分镜关键帧写死 16:9，跟锁定的视频比例（尤其 9:16 竖屏）矛盾——分镜图是视频帧的预览，构图比例必须对上。补上。**
+
+- **novel-storyboard SKILL.md Step 4**：把"一切一张 16:9 关键帧"改为"**源头带比例**"——出分镜图前查锁定视频比例，分镜关键帧 = 锁定比例；没锁定才 16:9 兜底。注明区分"分镜图预览比例"和"Seedance 生视频实际比例"
+- 版本：novel-storyboard `1.4.0 → 1.5.0`
+- 规则记忆 feedback_pipeline_preflight_params：两条硬约束表补 storyboard 比例消费点
+
+**教训**：比例从 outline 定后，**所有产出"视频相关画面"的环节都要对齐它**——storyboard 分镜关键帧、novel-assets 出图包分镜图，都是视频帧的预览，比例必须跟视频一致，否则构图对不上。
+
+---
+
+## novel-art v1.2.0 — 源头带风格（补上场景/道具画风统一）— 2026-08-23
+
+**流程审视发现：源头带风格只做了 characters，漏了 art——场景/道具 sheet 不按锁定风格写，画风会跟角色图跑偏。补上。**
+
+- **novel-art SKILL.md Step 0 加"源头带风格"**：查项目配置锁定风格 → 有就用（把渲染质感核心融进场景/道具 sheet，**不照搬角色五块**）→ 没锁定当场问三层（同 characters 框架）。`--style realistic/ghibli` 降级为兜底
+- 版本：novel-art `1.1.0 → 1.2.0`
+- 规则记忆 feedback_pipeline_preflight_params：规则 4"源头带风格"扩为 characters + art
+
+**教训**：源头带风格要覆盖**所有写 sheet 的 skill**（characters + art），不是只做角色——场景/道具图和角色图要同一画风，否则出图包 52 张拼一起对不上。
+
+---
+
+## novel-script v1.3.1 — 软审加"validate 钩子" — 2026-08-23
+
+**把软审从"靠执行者记得"变成"脚本主动提示"**——validate 全部通过后自动打印一行软审提示（带上已写集数）。
+
+- **novel-script.mjs validate 成功后打印软审钩子**：`💡 质量门查的是"格式"... 说"顾问审一遍"，AI 五角度软审已写的 N 集...`——有违规先修不提示，全部通过才提示；零依赖（纯 console.log，不调模型）
+- **adviser-pass.md 补"审的范围"**：默认审 script.json 里实际已写的集（分批写，每批 validate 后审本批）；全集整体审需另说、慎改
+- **SKILL.md Step 3.5 补触发说明**：validate 通过后脚本会提示，用户看到就点跑
+- 版本：novel-script `1.3.0 → 1.3.1`
+- selftest 154 项全绿
+
+**教训**：软审是"AI 判断"功能，天生软（脚本调不了模型）。要它真落实，不能只写进 SKILL 文字（靠执行者自觉），要加**脚本钩子**（validate 跑完打印提示）——确定性的，跑必见。
+
+---
+
+## 前置询问融入 skill（outline 比例 + characters 风格）— 2026-08-23
+
+**把"跑管线前问比例+画风"从前置询问规则（feedback_pipeline_preflight_params）真正搬进 skill 的强制第一步——不再靠 Claude 记得问。**
+
+- **novel-outline 1.1.0 → 1.2.0**：Step 0 收参数表加"视频比例"（默认 9:16 竖屏 / 16:9 横屏）——比例影响下游分镜图 + 出图包，outline 阶段定掉
+- **novel-characters 1.11.0 → 1.12.0**：Step 0.5 源头带风格补后半段——**若项目记忆无锁定风格配置，当场问用户**（市面预设/飞书库/自定义三层选项），选完当场定负面词存配置，再写 sheet（不再默默用默认 realistic）
+
+**教训**：前置询问最初只写进记忆规则（Claude 对话层），skill 里没有"询问"步骤——换会话/换 agent 就没人问了。要真正强制，必须写进 skill 的 Step 0/0.5 收参数阶段。
+
+---
+
+## novel-script v1.3.0 — 顾问软审（Step 3.5，可选高级功能）— 2026-08-23
+
+**剧本定稿前的可选质量步骤：validate 通过后，AI 当独立审稿人软性审一遍剧本，出建议清单，不卡门只参考。**
+
+- **Step 3.5 顾问软审**：用户说"顾问审一遍"才跑，validate 通过后、storyboard 之前
+- **五角度**：人物动机 / 情感铺垫 / 逻辑漏洞 / 伏笔缺失 / 爽感节奏（短剧命脉）
+- **独立视角**：子代理优先（不继承写作上下文）/ 人格切换兜底（"不是作者是审稿人"）
+- **证据规则**：局部问题必须带原文；整体性问题指明范围 + 至少 1 个落点（防胡诌）
+- **归属层**：剧本/outline/characters——上游问题提示回上游改，不在剧本层硬改（防越界）
+- **闭环**：用户挑最多 3 条 → 我改 script.json（定向补丁，**不是重跑**）→ 重新 validate → 下游 storyboard 相关段重跑。收敛规则：每轮最多改 3 条，改完收
+- **输出**：`<剧名>-script-adviser.txt`（top3 优先 + 分级 🔴/🟡/⚪ + 只能改1处提示 + 一句话整体印象）
+- **新增** `references/adviser-pass.md`（执行细则）
+- 不改脚本（零依赖，AI 步骤调不了模型）、不加 selftest
+- 版本：novel-script `1.2.0 → 1.3.0`
+
+**经验**：这是从"10 道确定性硬门"（查格式对不对）延伸出的"软审"（查好不好看）——硬门查硬伤、软审查软伤，两条腿走路。软审靠 AI 判断，关键是**证据要求**（没原文/没落点的建议算废话）和**归属层**（别把上游问题当剧本问题硬改）。
+
+---
+
+## novel-assets v1.2.0 — 前置询问落地（样张图 + 负面词 + 比例方向）— 2026-08-23
+
+**配套「管线前置询问 v7.1」方案（feedback_pipeline_preflight_params）落地。核心：画风由 sheet 源头带，样张图只在设定图阶段作画风锚用一次。**
+
+- **`run` 新增 `--style-ref <本地图>`**：样张图 → 打包进 zip 为 `style-ref.png`（画风锚）。说明.txt 写"参考画风不参考长相"，防 GPT 抄样张人物。**路径无效时警告 + 不入包 + 说明.txt 不声称有样张**（防"说明.txt 说有、zip 没有"）
+- **`run` 新增 `--negative "avoid ..."`**：负面词转"全局避免"写进说明.txt（GPT 网页版无负面词栏）
+- **说明.txt 加【统一画风】段**：配方在 sheet（源头带），说明.txt 只放样张说明 + 负面词 + "所有 sheet 已含风格照画"（职责分工，不重复配方）
+- **分镜图比例方向推导**：修硬编码"（竖屏）"漏洞——`9:16`→竖屏、`16:9`→横屏、其他不带方向词（原来 16:9 会输出"16:9（竖屏）"自相矛盾）
+- **place 静默跳过 `style-ref.png`**：样张是参考图非产出，GPT 带回交付 zip 时不再误警告
+- **packZip 支持二进制入包**（base64）——node 侧读图转 base64，python 端解码 writestr
+- **selftest 59→63 项**：+样张/负面词断言（说明.txt 结构）+ 比例方向推导断言 + 16:9 不含"竖屏"防回归
+- 版本：novel-assets `1.1.0→1.2.0`、novel-characters `1.10.0→1.11.0`（源头带风格 Step 0.5/6）
+- 文档同步：README.md / README.en.md（run 参数 + zip 表格 + style-ref 行）、examples/说明.txt 重新生成、references/setup-task.md + storyboard-task.md（画风锚 + 比例方向）
+
+**经验**：这次修的是"**说明.txt 与 zip 实际内容对账**"+"**方向跟比例的矛盾**"——都是默认只有 9:16 竖屏时写死的假设，比例可配置后就漏了。教训：比例一旦可变，所有写死方向词/比例的地方都要跟着参数走。
+
+---
+
+## novel-assets 审视修复 — 2026-08-23
+
+- **frontmatter description 同步 zip 流程**（旧写"01_设定图任务.txt"，跟 zip 流程矛盾）+ metadata 补 python 可选依赖 + 版本升 1.1.0
+- **`packZip` 改临时文件传参**：文件清单 JSON 不再走命令行参数（Windows 上限约 32KB，大剧会撑爆），写临时文件让 python 读，用完删
+- **SKILL.md 正文"任务文本"→"出图包 zip"** 表述统一
+- **selftest 升 50 项**：加"设定图/分镜图不单独打包"断言（旧断言还在等旧 zip 行为）
+
+---
+
+## novel-assets 改造成「出图包 zip」流程 — 2026-08-23
+
+**核心变化：用户只操作两次（丢 zip 进去、丢 zip 回来），GPT 自己完成全部。**
+
+旧流程要用户分两次发文本 + 手动上传设定图。新流程：
+- `run` 产出 `<剧名>-出图包.zip`（说明.txt + 01_设定图提示词.txt + 02_分镜图提示词.txt）
+- **说明.txt** 是给 GPT 的总指令：第 1 步生成全部设定图并**记住形象** → 第 2 步生成全部分镜图**引用刚生成的设定图** → 第 3 步打包交付
+- 删掉"给用户的上传指引"和"参考图清单"——参考来源从"用户上传"变成"GPT 记忆"，这是整个自足流程的关键
+- `packZip` 用 python zipfile 打包（node 无标准库 zip），**强制 UTF-8 文件名标志**防中文乱码
+- selftest 扩到 49 项（新增说明.txt 三步结构、记忆引用、无上传指引断言）
+
+**经验**：任务文本里"给 GPT 的指令"和"给用户的操作指引"是两回事——用户直接丢 zip 的方案里，所有引导都写进说明.txt 让 GPT 自己执行，用户零操作。
+
+---
+
+## 新增 novel-assets（出图闭环第 6 阶段）— 2026-08-23
+
+**五段管线后的出图闭环**：把 cast/art/storyboard 里已写好的提示词打包成「发 GPT 的任务文本」，图回来归位，report 补图。不写提示词、不生成图（GPT 网页版手动出图）、不改任何现有 JSON。
+
+- 新 skill `skills/novel-assets/`：SKILL.md + README（中英）+ 2 份 references（setup-task / storyboard-task）+ 脚本
+- `scripts/novel-assets.mjs` 三个命令：
+  - `run` — 生成 `01_设定图任务.txt`（16 张 image.sheet）+ `02_分镜图任务.txt`（36 镜 frame + 逐镜参考绑定，9:16）
+  - `place` — GPT zip 解压目录按命名规则归位（设定图 → `images/`，分镜图 → `<段号>/`）
+  - `render` — 转发各 skill 的 render 补 report（缺哪个跳过哪个）
+- `scripts/selftest.mjs` — 32 项自测全绿（slug / 别名绑定解析 / 任务文本结构 / 比例规则）
+- 绑定解析：cast 别名兜底（如 binds 写"小红"归到"红色纸人"），剥 @ 前缀和 -动作后缀
+- 人机配合：run → 用户发 GPT → GPT 打包 zip → 用户丢回 → place → render = 闭环
+
+**经验教训沉淀（本次踩坑）**：出图是用户手动环节（GPT Plus 网页版），Claude 只做任务文本打包 + 图归位 + report 补图，替代不了手动出图。设定图是 16:9 资产图（sheet 内部已写比例），分镜图才写死 9:16——两者比例规则不同，不能混用。
+
+### 修 novel-assets 4 个对账漏洞（8-23）
+
+构建后检查发现的漏洞，全部修源头：
+
+1. **分镜图命名前导零对账**：run 生成的 `E01-01_f01.png` 改为 `E01-01_f1.png`（去前导零）——上游 novel-storyboard render/exportPack 查找 `f${i+1}.png` 无前导零，带零会导致 place 归位后 report 找不到图
+2. **render `--script` 传错**：原来把 storyboard.json 当 script.json 传给 novel-storyboard render，现增加 `--script <script.json>` 参数转发对的剧本
+3. **render 转发补 `--cast`/`--art`**：storyboard render 需要它们做 @绑定，缺了误报门
+4. **place 扩展名支持**：放宽到 png/jpg/webp，归位统一转 .png 名（GPT 可能出 jpg）
+
+selftest 从 32 项扩到 38 项：加命名无前导零断言 + place 扩展名测试，防回归。
+
+### 修 novel-assets 第 5 个漏洞（8-23）
+
+**缺 `image.sheet` 时输出 `提示词：undefined`**（防御性）：正常管线质量门强制 sheet 存在，但为防将来漏写，`buildSetupTask` 现在**过滤空 sheet 项并跳过**（stderr 打印警告），不产废图。selftest 扩到 41 项（含"缺 sheet 不输出 undefined"断言）。
+
+### 修 novel-assets 第 6 个漏洞（8-23，最严重）
+
+**分镜图镜号全局累计 → 段内错位**：`buildStoryboardTask` 原本用全局序号 `n` 命名（E01-02 会生成 `f4.png`），但上游 exportPack/render 的镜号是**段内从 1 数**（`f${i+1}`，i 是段内索引）。后果：第 2 段起所有分镜图归位后段内镜号错位，report 找不到图。改为**按段分组、段内计数**（E01-02 仍从 f1 开始），全局序号仅标题用。selftest 扩到 43 项（加"第二段从 f1 重新开始"断言）。
+
+### 修 novel-assets 第 7 项 + render 增强（8-23，内容级）
+
+- **分镜图任务文本加"发文本前上传指引"**：顶部新增给用户看的指引段——"先把设定图上传到对话，再复制指令给 GPT"。这是人机衔接的关键：之前文本只对 GPT 说话，用户不知道要主动传图，GPT 没参考会画不一致
+- **render 命令加 `--outline` 转发**：让 storyboard render 的"提示词禁人名"门生效（缺 outline 该门跳过视为通过）
+- examples/ 同步最新任务文本；SKILL.md / USAGE 更新
+
+---
+
 ## 管线顺序对齐流程图 — 2026-08-18
 
 **大纲挪到角色前面，文档跟流程图口径统一**

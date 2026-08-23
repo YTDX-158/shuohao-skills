@@ -1,6 +1,6 @@
 ---
 name: novel-characters-ytdx
-version: 1.10.0-ytdx.1
+version: 1.14.0-ytdx.1
 description: |
   从小说或短故事里拆出角色表、人物画像、形象提示词、音色提示词，
   并给每个角色出角色设定图（左半身像 + 右全身三视图 + 细节条），产出 JSON + Markdown + 可交互的 report.html。
@@ -68,7 +68,15 @@ metadata:
 
 ### Step 0.5 — 确定画风
 
-用户可以指定出图风格：**默认 `realistic`**（半写实厚涂），想要动画质感就用 `ghibli`（吉卜力式手绘赛璐璐）。
+**源头带风格（最高优先）**：跑本 skill 前先查项目记忆里的全局风格配置（前置询问锁定的风格配方 + 样张图，见规则 feedback_pipeline_preflight_params）。**若已锁定全局风格，image.sheet 就按锁定的配方写**（源头带，不事后改），`--style` 预设只是渲染质感的快捷维度。锁定风格与预设冲突时，以锁定的完整配方为准，必要时把预设五块（render/surface/lighting/negative/tags）按锁定风格改写，但保持 negative 与风格自洽。
+
+**若没有锁定配置，必须当场问**（不能默默用默认 `--style realistic`）：给用户三层风格选项——① 市面预设（写实/二次元/3D动画/卡通Q版/厚涂/国风，Claude 现场组织配方）② 从飞书风格库选（提取完整配方 + 下载样张图存项目目录 `style-ref.png`）③ 自定义（丢参考图/链接/一句话）。**选完当场确定负面词**（市面预设从薄负面词表取，飞书风格用文档自带，见 feedback_pipeline_preflight_params），连同配方存进项目配置，再写 sheet。
+
+**画风名固化（源头固化点）**：选定的画风名（一句话，如「暗黑写实电影感」）在 assemble 时传 `--style`——cast.json 顶层 `style` 存**锁定的画风名**，不是预设名 `realistic`/`ghibli`。这是画风链的源头固化点：下游 novel-storyboard validate 对账（`storyboard.style == cast.style`）、novel-assets 出图包都从它读。预设名只作渲染维度兜底，锁定后不用它当顶层 style。
+
+**validate 接受锁定名**：cast.json 顶层 style 是锁定画风名时，`validate` 会提示"不是渲染预设"但**不拦**（style-match 门对非预设跳过）；顶层 style 是渲染预设名（realistic/ghibli）时照常拦反向提示词。看到那个 ℹ️ 提示别慌。
+
+用户指定出图风格：**默认 `realistic`**（半写实厚涂），想要动画质感就用 `ghibli`（吉卜力式手绘赛璐璐）。
 
 ```bash
 node {baseDir}/scripts/novel-characters.mjs styles   # 打印预设的完整内容
@@ -156,6 +164,7 @@ node {baseDir}/scripts/novel-characters.mjs merge <workdir> --apply merges.json 
 每份任务拿到：
 - `{baseDir}/references/profile-pass.md` 和 `{baseDir}/references/schema.md`（读它们，照着做）
 - **报告语言 `lang`**（Step 0 定的）
+- **全局风格配方 + 样张图路径**（若前置询问已锁定风格——源头带风格，`image.sheet` 按锁定配方写，样张图作画风锚参考；没锁定就按 Step 0.5 的预设写）
 - 该角色归并后的 `name` / `aliases` / `notes` / `quotes`
 - **同批其他角色的名字**（避免长相声线撞车）
 

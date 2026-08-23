@@ -1043,6 +1043,11 @@ function main(argv) {
     }
     const st = computeStats(doc);
     console.log(`✓ ${st.totals.episodes} 集 / ${st.totals.scenes} 场 / ${st.totals.lines} 句台词全部通过校验（预估 ${st.totals.estSeconds}s / 目标 ${st.totals.targetSeconds}s）`);
+    // 软审钩子：质量门查"格式"，观感查不了。全部通过才提示（有违规先修）。
+    // 可选软审由 AI 执行（Step 3.5 / references/adviser-pass.md），脚本只提示不调模型。
+    console.log(`💡 质量门查的是"格式"，好不好看查不了。可选：说"顾问审一遍"，AI 会`);
+    console.log(`   从五角度（人物动机/情感铺垫/逻辑漏洞/伏笔缺失/爽感节奏）软审已写的 ${st.totals.episodes} 集，`);
+    console.log(`   出建议清单（<剧名>-script-adviser.txt），不卡门。默认审本批，全集整体审需另说。`);
     return;
   }
 

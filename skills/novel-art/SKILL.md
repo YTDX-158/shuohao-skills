@@ -1,6 +1,6 @@
 ---
 name: novel-art-ytdx
-version: 1.1.0-ytdx.1
+version: 1.4.0-ytdx.1
 description: |
   给 AI 短剧出美术设定集（场景 + 叙事道具）：场景的设计意图、一致性锚点、光照时段变体、
   空景提示词；道具的戏剧功能、状态变体、尺度参照、白底无手提示词。
@@ -66,7 +66,13 @@ metadata:
 2. 小说原文——自己归纳场景清单（主舞台优先，参考 novel-outline 的主场景上限思路：别贪多）
 3. 用户手写的场景清单
 
-画风：**默认 `realistic`**（半写实厚涂），动画质感用 `ghibli`。**跟角色 skill 保持同一档**——角色是吉卜力、场景是半写实，合成的时候没法看。跑 `node {baseDir}/scripts/novel-art.mjs styles` 看预设全文，整块取用不混搭。
+**源头带风格（最高优先）**：跑本 skill 前先查项目记忆里的全局风格配置（前置锁定的风格配方，见规则 feedback_pipeline_preflight_params）。**若已锁定，场景/道具 sheet 按锁定的配方写**——把锁定的**渲染质感核心**（render 那句 + 色调 + 负面词）融进场景/道具提示词，**不要照搬角色 sheet 的五块结构**（surface 那类皮肤/布料细节是角色的，场景/道具不需要）。锁定风格时，`--style realistic/ghibli` 只是兜底。
+
+**若没有锁定配置，必须当场问**（不能默默用默认 `realistic`）：给用户三层风格选项——① 市面预设 ② 从飞书风格库选 ③ 自定义（丢参考图/链接）。选完当场定负面词存配置，再写 sheet。**跟角色 skill（novel-characters Step 0.5）保持同一画风**——角色是吉卜力、场景是半写实，合成的时候没法看。
+
+**style 字段语义分工（别混）**：`art.json` 顶层 `style` 是**渲染维度预设**（realistic / ghibli，validate 只认这两个）；`cast.json` 顶层 `style` 是**锁定画风名**（自由文本，画风锚）。看到 cast.style="暗黑写实电影感"是画风锚，**别写进 art.json 的 style**（validate 会拦）；锁定画风的完整配方从项目记忆取，融进每个 scene/prop 的 sheet 提示词（源头带）。
+
+画风兜底：默认 `realistic`（半写实厚涂），动画质感用 `ghibli`。跑 `node {baseDir}/scripts/novel-art.mjs styles` 看预设全文，整块取用不混搭。
 
 有 cast.json（novel-characters 的产出）也带上——校验「提示词不含角色名」要用。
 
@@ -89,7 +95,7 @@ node {baseDir}/scripts/novel-art.mjs seed <outline.json> > <workdir>/art.json
 - **同批其他场景的名字**（空间气质要区分开，别都写成同一种破旧）
 - 画风预设全文（`styles` 命令的输出）
 
-核心要求都在 scene-pass.md 里，最重的三条：锚点要**可画可认可核对**（「补丁船篷」是锚点，「陈旧的氛围」是形容词）；光照状态**从分集反推**，不写用不上的全家桶；**能做变体就别开新景**。
+核心要求都在 scene-pass.md 里，最重的三条：锚点要**可画可认可核对**（「补丁船篷」是锚点，「陈旧的氛围」是形容词）；光照状态**从分集反推**，不写用不上的全家桶、**主场景补常态档**（不然全程一个特殊光照、没有日常对照——见 scene-pass 第 3 条）；**能做变体就别开新景**。
 
 **叙事道具**从原文/大纲提取（大纲没有现成道具表，这步是模型的活）：只收**有特写、跨集出现、承载剧情**的，通常 3–8 件，跟主角数量一个量级。每件按 `references/prop-pass.md` 填：戏剧功能、锚点、状态变体、尺度、白底无手提示词。皮箱这种「跟人走的道具」就该在这——塞进场景锚点和角色画像都不对。
 

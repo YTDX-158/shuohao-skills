@@ -1,6 +1,7 @@
 {
   "source": "渡口",
   "lang": "zh",
+  "ratio": "16:9",
   "params": {
     "episodes": 6,
     "minutesPerEpisode": 2,

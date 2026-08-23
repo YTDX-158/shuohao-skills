@@ -1814,8 +1814,10 @@ function main(argv) {
     const source = bookPath ? readFileSync(resolve(bookPath), 'utf8') : null;
     if (!bookPath) console.error('⚠️ 没给原文，跳过逐字引文校验');
     const problems = validateCast(characters, source, lang, style);
-    if (!SUPPORTED_STYLES.includes(style)) {
-      problems.unshift(`顶层 style=${style} 不是已知预设（${SUPPORTED_STYLES.join('/')}）`);
+    // 锁定画风名（如「暗黑写实电影感」）不是渲染预设——接受，style-match 门对非预设跳过；
+    // 只提示不拦（画风源头在 characters Step 0.5，validateCast 已宽松处理）
+    if (style && !SUPPORTED_STYLES.includes(style)) {
+      console.warn(`ℹ️ style=${style} 不是渲染预设（${SUPPORTED_STYLES.join('/')}）——按锁定画风名处理，style-match 门跳过`);
     }
     // 顶层的故事摘要——报告要用，缺了就没法在顶部交代背景
     if (typeof summary !== 'string' || !summary.trim()) {

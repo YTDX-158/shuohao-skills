@@ -1,6 +1,6 @@
 ---
 name: novel-storyboard-ytdx
-version: 1.4.0-ytdx.1
+version: 1.7.0-ytdx.1
 description: |
   给 AI 短剧出分镜（Seedance 一镜一视频版）：镜（每镜独立一次视频生成，时长固定 1–6 秒）是根，
   每镜带结构化元数据（空间/姿态/位置/情绪，@设定图绑定）→ 视觉描述 → 台词（原语言+语气）→ 无字幕约束，
@@ -9,7 +9,7 @@ description: |
   （分镜节奏带/分集分镜表/批次单/配音对齐单，报告显示结构化元数据 + seedancePrompt + @绑定图）。
   内化导演层（directing-read/directing-engine/cinematography-shot-language，自 seedance-20-ytdx），
   切镜前强制导演读解，景别/运镜/表演有导演判断。
-  17 道质量门全部由脚本确定性检查（+ 可选 shot-recipe 卡库第 18 道）；export 每镜出投产 prompt.md。
+  18 道质量门全部由脚本确定性检查（+ 可选 shot-recipe 卡库第 19 道）；export 每镜出投产 prompt.md。
   零依赖、零 API key，用当前会话额度。
   Use when asked to 分镜、出分镜、镜头表、切镜、storyboard for AI short drama。
 allowed-tools:
@@ -72,7 +72,10 @@ metadata:
 ### Step 1 — seed 工作底稿
 
 ```bash
-node {baseDir}/scripts/novel-storyboard.mjs seed <script.json> --eps 1-3 > <workdir>/storyboard.json
+node {baseDir}/scripts/novel-storyboard.mjs seed <script.json> --eps 1-3 \
+  --outline <outline.json> > <workdir>/storyboard.json
+# --outline：从 outline.json 顶层 ratio 自动带出锁定视频比例（源头固化，别手动编）
+# 独立跑（没 outline）也可手动 --ratio 9:16 指定
 ```
 
 确定性展开：每场的节拍清单（编号、动作/台词、每拍秒数、说话人）进 `seedScenes`，这就是切镜时的工作底稿。**每拍几秒是算出来的（台词字数 ÷ 5.5），不要让模型重新估。** shots 留空，切镜才是模型的活。
@@ -92,7 +95,9 @@ node {baseDir}/scripts/novel-storyboard.mjs seed <script.json> --eps 1-3 > <work
 2. **运镜有理由**——揭示戏该推近、灾难戏该升降/横移、权力戏该低机位；固定机位留给口型/身份/连贯锚点。不为动而动
 3. **表演是动作不是情绪词**——"林风很期待"换成"林风把蝴蝶结举到眼前，眼睛跟着它慢慢发亮"；台词跟画面对上，画面在演谁，台词就是谁说
 
-**每镜一条 `seedancePrompt`**，照 `{baseDir}/references/seedance-prompt.md` 写。要点：头部风格声明（全片统一）+ 无文字无BGM；镜号行 `c<镜号>,<秒数>s`（秒数 = `seconds` 字段，一个字符都不许漂）；元数据四件套（空间/姿态/位置/情绪）全带 `@设定图` 绑定；台词 `@说话人用中文[语气]地说道<台词>` 按剧本逐字；每镜带无字幕强调。
+**顶层两字段先定（源头带，别现场编）**：`style` = cast.json 顶层的锁定画风名（characters Step 0.5 定的，给了 `--cast` 时 validate 对账）；`ratio` = seed 时 `--outline` 已从 outline.json 带出的锁定视频比例。
+
+**每镜一条 `seedancePrompt`**，照 `{baseDir}/references/seedance-prompt.md` 写。要点：头部风格声明（= 顶层 `style`）+ 无文字无BGM；镜号行 `c<镜号>,<秒数>s`（秒数 = `seconds` 字段，一个字符都不许漂）；元数据四件套（空间/姿态/位置/情绪）全带 `@设定图` 绑定；台词 `@说话人用中文[语气]地说道<台词>` 按剧本逐字；每镜带无字幕强调。
 
 切完把 `seedScenes` 删掉。
 
@@ -104,7 +109,7 @@ node {baseDir}/scripts/novel-storyboard.mjs validate <storyboard.json> \
   [--shots <shot-recipes/references/cards>]
 ```
 
-17 道质量门全是代码：节拍全覆盖（镜级，恰好一次、按顺序、连续）、段 ≤15 秒、**每镜 1–6 秒固定**、台词装得进镜（语速 5.5）、每集总时长在剧本目标 ±15% 内、同框 ≤ 3 人（超了必须带拆解说明）、段号 E01-01 格式连号、景别短语在分镜图提示词里、**风格短语统一**（`style` 自由文本，同剧画风不许漂）、运镜用 Seedance 词表且落在自己的镜描述里、**镜号行秒数 = seconds 字段**（每镜固定时长）、**台词按剧本原始语言逐字**、**每镜提示词带无字幕约束**、分镜图提示词全英文非空、分镜图提示词不含角色名、**@绑定全部 ∈ 资产库**（角色/道具设定图名字）、场次/人物/道具对账剧本、**镜头配方对账**（可选门，见下）。
+18 道质量门全是代码：节拍全覆盖（镜级，恰好一次、按顺序、连续）、段 ≤15 秒、**每镜 1–6 秒固定**、台词装得进镜（语速 5.5）、每集总时长在剧本目标 ±15% 内、同框 ≤ 3 人（超了必须带拆解说明）、段号 E01-01 格式连号、景别短语在分镜图提示词里、**风格短语统一**（`style` 自由文本，同剧画风不许漂；给了 `--cast` 对账 cast.json 顶层 style）、**分镜图比例 = 锁定视频比例**（顶层 `ratio` 存在 + 每镜 frame 带比例短语）、运镜用 Seedance 词表且落在自己的镜描述里、**镜号行秒数 = seconds 字段**（每镜固定时长）、**台词按剧本原始语言逐字**、**每镜提示词带无字幕约束**、分镜图提示词全英文非空、分镜图提示词不含角色名、**@绑定全部 ∈ 资产库**（角色/道具设定图名字）、场次/人物/道具对账剧本、**镜头配方对账**（可选门，见下）。
 
 **有违规逐条修，改完重跑，直到通过。**
 
@@ -112,7 +117,9 @@ node {baseDir}/scripts/novel-storyboard.mjs validate <storyboard.json> \
 
 ### Step 4 — 出分镜图（可选）
 
-一切一张 16:9 关键帧，走图模型（Seedream / 豆包视觉），读 `{baseDir}/references/frame.md` 照契约做。要点：
+**源头带比例（最高优先）**：分镜关键帧比例 = **storyboard.json 顶层 `ratio`**（seed 时已从 outline.json 带出，见 Step 1）——它是视频帧的预览，视频 9:16 竖屏、关键帧就 9:16，构图比例必须对上。**frame 提示词结尾带比例短语（`9:16` / `16:9`），validate 对账**。没 ratio 才默认 16:9 兜底。**report 排版也跟随 ratio**（1.7.0）：9:16 竖卡限宽居中、16:9 横卡占满、缺省 contain 兜底——分镜图不裁切。**注意区分**：这是分镜图预览比例，跟 Seedance 生视频的实际比例是两回事（生视频按视频模型能力定，那是生视频阶段的事）。
+
+一切一张关键帧，走图模型（Seedream / 豆包视觉），读 `{baseDir}/references/frame.md` 照契约做。要点：
 
 - **没有图模型就整步跳过**，只交提示词，报告显示占位不装有
 - **参考图是命根子**：挂上该段场景设定图（`sceneImage`）+ 画内角色设定图 + 涉及道具设定图，提示词只负责取景和此刻的姿态
