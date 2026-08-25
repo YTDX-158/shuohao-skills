@@ -30,7 +30,7 @@
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| `beats` | [int, int] | 认领该场第几拍到第几拍（含两端）。每个节拍必须被恰好一个镜认领，按顺序、连续 |
+| `beats` | [int, int] | 认领该场第几拍到第几拍（含两端），**节拍编号从 1 起**（该场第 1 拍 = `1`，validate 按 1-based 对账，写 0 会判不合法）。每个节拍必须被恰好一个镜认领，按顺序、连续 |
 | `seconds` | number | 镜时长，1–6 秒固定。认领节拍的台词秒数必须装得下（语速 5.5 字/秒） |
 | `size` | enum | 景别：`extreme-wide` 大远景 / `wide` 全景 / `medium` 中景 / `close` 特写 / `extreme-close` 大特写 |
 | `camera` | enum | 运镜，用 Seedance 词表（见 seedance-prompt.md）：`Static` `Push In` `Pull Out` `Zoom` `Pan` `Truck` `Tilt` `Pedestal` `Arc` `Tracking` `POV` `Shake` `Roll` |
