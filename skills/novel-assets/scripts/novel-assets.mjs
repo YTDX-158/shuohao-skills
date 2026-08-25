@@ -292,8 +292,40 @@ print('zip 写入:', out)
   return join(out, `${title}-出图包.zip`);
 }
 
+/** 读项目目录上游数据（cast/art/storyboard），构建命名校验白名单（资产名 + slug 双份）。
+ *  探测失败返回 found=false → place 跳过校验不阻断（只警告不乱归）。 */
+function loadNameCheck(outDir) {
+  const names = new Set();
+  const segs = new Set();
+  try {
+    const castDir = join(outDir, '02_角色');
+    const castFile = readdirSync(castDir).find(f => /cast\.json$/i.test(f));
+    if (castFile) {
+      const d = readJson(join(castDir, castFile));
+      for (const c of d.characters || []) {
+        if (c?.name) { names.add(c.name); names.add(slug(c.name)); }
+        for (const a of c?.aliases || []) { names.add(a); names.add(slug(a)); }
+      }
+    }
+    const artDir = join(outDir, '03_美术');
+    const artFile = readdirSync(artDir).find(f => /art\.json$/i.test(f));
+    if (artFile) {
+      const d = readJson(join(artDir, artFile));
+      for (const p of d.props || []) if (p?.name) { names.add(p.name); names.add(slug(p.name)); }
+    }
+    const sbDir = join(outDir, '05_分镜');
+    if (existsSync(join(sbDir, 'storyboard.json'))) {
+      const d = readJson(join(sbDir, 'storyboard.json'));
+      for (const ep of d.episodes || []) for (const s of ep.segments || []) if (s?.id) segs.add(s.id);
+    }
+    return { names, segs, found: true };
+  } catch {
+    return { names, segs, found: false };
+  }
+}
+
 /** 从 zip 解压目录把图按命名规则归位到输出目录 */
-function placeImages(srcDir, outDir) {
+function placeImages(srcDir, outDir, check = { names: new Set(), segs: new Set(), found: false }) {
   if (!existsSync(srcDir)) {
     console.error(`❌ 解压目录不存在: ${srcDir}`);
     process.exit(1);
@@ -315,7 +347,11 @@ function placeImages(srcDir, outDir) {
       // 设定图：<名>-sheet.png（GPT 可能存 .jpg/.webp，归位统一转 .png 名）
       const sm = ent.match(/^(.*)-sheet\.(png|jpe?g|webp)$/i);
       if (sm) {
-        const dest = join(outDir, 'images', `${sm[1]}-sheet.png`);
+        const nm = sm[1];
+        if (check.found && !check.names.has(nm)) {
+          warnings.push(`⚠️ 疑似乱命名: ${ent}（「${nm}」不在资产库 cast/art）——已归位，请核对`);
+        }
+        const dest = join(outDir, 'images', `${nm}-sheet.png`);
         copyFileSync(full, dest);
         moved.sheets++;
         continue;
@@ -324,6 +360,9 @@ function placeImages(srcDir, outDir) {
       const m = ent.match(/^(E\d{2}-\d{2})_f(\d+)\.(png|jpe?g|webp)$/i) || ent.match(/^f(\d+)\.(png|jpe?g|webp)$/i);
       if (m) {
         const seg = m[1] || 'unknown';
+        if (check.found && m[1] && !check.segs.has(seg)) {
+          warnings.push(`⚠️ 疑似乱命名: ${ent}（段号「${seg}」不在 storyboard 段列表）——已归位，请核对`);
+        }
         const seq = m[2];
         const segDir = join(outDir, seg);
         mkdirSync(segDir, { recursive: true });
@@ -452,7 +491,7 @@ function main(argv) {
       const src = rest[0];
       const out = flag(rest, '--out', '.');
       if (!src) { console.error('❌ place 需要 zip 解压目录'); process.exit(1); }
-      placeImages(src, out);
+      placeImages(src, out, loadNameCheck(out));
       break;
     }
     case 'render': {
