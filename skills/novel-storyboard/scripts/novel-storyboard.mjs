@@ -605,7 +605,8 @@ export function gateReport(board, ctx = {}) {
       }
 
       // 每集总时长对齐剧本目标
-      if (sEp.targetSeconds > 0) {
+      // 保留原文模式（剧本 params.preserveOriginal 默认开，缺省即 true）下不卡时长——已有剧本的时长是参考不是约束
+      if (sEp.targetSeconds > 0 && !(script?.params?.preserveOriginal ?? true)) {
         const total = (ep?.segments ?? []).reduce((n, s) => n + segSeconds(s), 0);
         const lo = sEp.targetSeconds * (1 - params.tolerance);
         const hi = sEp.targetSeconds * (1 + params.tolerance);

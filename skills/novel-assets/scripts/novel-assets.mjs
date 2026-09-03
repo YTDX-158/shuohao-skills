@@ -219,7 +219,7 @@ function buildStoryboardTask({ name: title, storyboard, cast, art, ratio, style,
 }
 
 /** 说明.txt：给 GPT 的总指令——统一画风 → 设定图 → 记住形象 → 分镜图 → 打包交付 */
-function buildInstruction({ name: title, shotCount, sheetCount, ratio, style, styleRef = false, negative = null }) {
+function buildInstruction({ name: title, shotCount, sheetCount, ratio, style, styleRef = false, negative = null, stage = 'all' }) {
   // 样张图（画风锚）：只在设定图阶段用一次，防抄长相
   const styleRefLine = styleRef
     ? '\n- style-ref.png — 本剧画风的参考样张（画风锚点）'
@@ -231,6 +231,56 @@ function buildInstruction({ name: title, shotCount, sheetCount, ratio, style, st
   const negativeSection = negative
     ? `\n全局避免：${negative}。`
     : '';
+  if (stage === 'assets') {
+    // 阶段一：只出设定图，审完资产再出分镜图（防资产错→分镜全废）
+    return `# ${title} · 设定图任务（第一批：只出设定图，暂不出分镜图）
+
+你是本剧的美术总监。本包有两个文件${styleRef ? ' + 一张风格参考样张' : ''}：
+- 01_设定图提示词.txt — 全部设定图的提示词（角色/场景/道具）${styleRefLine}
+
+【统一画风】
+所有 sheet 提示词已包含本剧画风（同一世界观、同一画风），照画即可。${styleRefSection}${negativeSection}
+
+【本批任务：只生成设定图】
+读 01_设定图提示词.txt，依次生成全部 ${sheetCount} 张设定图。
+每张按文件里给的命名保存（<名>-sheet.png）。生成时牢牢记住每张图的
+角色长相、服装、场景环境、道具造型——下一批分镜图要直接引用它们。
+
+【打包交付】
+把全部设定图打包成一个 zip 压缩文件交付，
+zip 内每张图按我给的命名保存，文件名不要改，不要建目录结构（扁平命名）。
+
+【注意事项】
+- 本批只出设定图，不要出分镜图。
+- 一次生成多张，如果中途停下，等我说"继续"后再接着生成下一张，不要从头再来。
+`;
+  }
+  if (stage === 'storyboard') {
+    // 阶段二：资产确认后只出分镜图，引用随附的已确认设定图
+    return `# ${title} · 分镜图任务（第二批：引用已确认的设定图）
+
+你是本剧的美术总监。本包有：
+- 02_分镜图提示词.txt — 全部分镜图（关键帧）的提示词，每镜标注了引用哪张设定图
+- 已随附本剧确认好的设定图（角色/场景/道具）——你参考它们来生成分镜图
+
+【统一画风】
+所有分镜图统一比例 ${ratio}${ratioOrientation(ratio) ? `（${ratioOrientation(ratio)}）` : ''}，统一画风「${style}」，与随附设定图保持同一世界观。${negativeSection}
+
+【本批任务：生成全部分镜图（关键帧）】
+读 02_分镜图提示词.txt，依次生成全部 ${shotCount} 张分镜图。
+每一镜按"引用设定图"标注，引用随附的设定图（角色的脸/衣服/场景/道具），
+必须和设定图一致，不要另造形象。
+分镜图一镜一张，画面干净，无文字、无水印、无边框。
+
+【打包交付】
+把全部分镜图打包成一个 zip 压缩文件交付，
+zip 内每张图按我给的命名保存，文件名不要改，不要建目录结构（扁平命名）。
+
+【注意事项】
+- 一次生成多张，如果中途停下，等我说"继续"后再接着生成下一张，不要从头再来。
+`;
+  }
+  // stage === 'all'：一次到位（demo 快速通道）
   return `# ${title} · 出图任务（请按顺序完成全部步骤）
 
 你是本剧的美术总监。本包里有三个文件${styleRef ? ' + 一张风格参考样张' : ''}：
@@ -262,7 +312,7 @@ zip 内每张图按我给的命名保存，文件名不要改，不要建目录�
 }
 
 /** 用 python zipfile 打包（node 无标准库 zip；python 显式标 UTF-8 文件名防乱码） */
-function packZip({ title, out, files }) {
+function packZip({ title, out, files, zipName }) {
   // 文件清单写临时文件（避免命令行参数超长：Windows 上限约 32KB，内容大时撑爆），
   // python 从文件读，用完删。
   const tmpFile = join(out, `.${slug(title)}-pack.json`);
@@ -283,13 +333,14 @@ with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as z:
             z.writestr(info, e['content'])
 print('zip 写入:', out)
 `;
-  const r = spawnSync('python', ['-c', pyCode, join(out, `${title}-出图包.zip`), tmpFile], { encoding: 'utf8' });
+  const zname = zipName ?? `${title}-出图包.zip`;
+  const r = spawnSync('python', ['-c', pyCode, join(out, zname), tmpFile], { encoding: 'utf8' });
   try { unlinkSync(tmpFile); } catch { /* 临时文件清理失败不影响结果 */ }
   if (r.status !== 0) {
     console.error('❌ zip 打包失败:', r.stderr || r.stdout);
     process.exit(1);
   }
-  return join(out, `${title}-出图包.zip`);
+  return join(out, zname);
 }
 
 /** 读项目目录上游数据（cast/art/storyboard），构建命名校验白名单（资产名 + slug 双份）。
@@ -312,6 +363,8 @@ function loadNameCheck(outDir) {
     if (artFile) {
       const d = readJson(join(artDir, artFile));
       for (const p of d.props || []) if (p?.name) { names.add(p.name); names.add(slug(p.name)); }
+      // 场景也是资产（设定图）：补进白名单，否则场景图归位时误报「不在资产库」
+      for (const s of d.scenes || []) if (s?.name) { names.add(s.name); names.add(slug(s.name)); }
     }
     const sbDir = join(outDir, '05_分镜');
     if (existsSync(join(sbDir, 'storyboard.json'))) {
@@ -388,8 +441,8 @@ function placeImages(srcDir, outDir, check = { names: new Set(), segs: new Set()
 // 转发调用各 skill 的 render 命令并捕获 stdout。
 // 各 skill 的 render 把 HTML 打到 stdout（SKILL 里靠用户重定向 `> report.html` 落盘），
 // novel-assets 补 report 要自动落盘，所以捕获回来写文件（stderr 保持继承，警告/错误仍显示）
-function runScript(scriptPath, args) {
-  const r = spawnSync(process.execPath, [scriptPath, ...args], { stdio: ['inherit', 'pipe', 'inherit'], encoding: 'utf8' });
+function runScript(scriptPath, args, opts = {}) {
+  const r = spawnSync(process.execPath, [scriptPath, ...args], { stdio: ['inherit', 'pipe', 'inherit'], encoding: 'utf8', cwd: opts.cwd });
   return { status: r.status, stdout: r.stdout ?? '' };
 }
 
@@ -400,8 +453,10 @@ function runScript(scriptPath, args) {
 const USAGE = `novel-assets.mjs — novel-assets skill 的确定性工具（出图闭环）
 
   run <剧名> --cast <cast.json> --art <art.json> --storyboard <storyboard.json>
-        打包成 <剧名>-出图包.zip（发 GPT 用）：说明.txt + 01_设定图提示词.txt + 02_分镜图提示词.txt
-        GPT 收包后自己完成全部：设定图→记住形象→分镜图（引用设定图）→打包交付
+        [--stage assets|storyboard|all]  两阶段出图（默认 all 一次到位）
+        assets:     出 <剧名>-设定图包.zip（说明.txt + 01_设定图提示词.txt）→ 审资产
+        storyboard: 出 <剧名>-分镜图包.zip（说明.txt + 02_分镜图提示词.txt；引用随附已确认设定图）
+        all:        出 <剧名>-出图包.zip（说明.txt + 01 + 02，GPT 一次完成）
         [--ratio 9:16]       视频/分镜图比例（默认取 storyboard.json 顶层 ratio，再兜底 9:16）
         [--style "风格"]      全局画风锚点（默认取 storyboard.style）
         [--style-ref <图>]   样张图本地路径 → 入包 style-ref.png（画风锚；说明.txt 防抄长相）
@@ -468,23 +523,34 @@ function main(argv) {
         console.warn(`⚠️ --style-ref 路径不存在: ${styleRef}（样张图不入包，画风可能不锁）`);
       }
 
-      const instructionTxt = buildInstruction({ name: title, shotCount, sheetCount, ratio, style, styleRef: styleRefPacked, negative });
+      const stage = flag(rest, '--stage', 'all');  // assets | storyboard | all（拆两阶段：先资产后分镜，防资产错→分镜全废）
+      if (!['assets', 'storyboard', 'all'].includes(stage)) {
+        console.error('❌ --stage 只能为 assets（只出设定图）/ storyboard（只出分镜图）/ all（一次到位）');
+        process.exit(1);
+      }
+      const instructionTxt = buildInstruction({ name: title, shotCount, sheetCount, ratio, style, styleRef: styleRefPacked, negative, stage });
 
       mkdirSync(out, { recursive: true });
-      const files = [
-        { name: '说明.txt', content: instructionTxt },
-        { name: '01_设定图提示词.txt', content: setupTxt },
-        { name: '02_分镜图提示词.txt', content: storyTxt },
-      ];
-      // 样张图入包：飞书特化风格必须（画风锚，设定图阶段用一次）
-      if (styleRefPacked) {
+      const files = [{ name: '说明.txt', content: instructionTxt }];
+      if (stage === 'assets' || stage === 'all') files.push({ name: '01_设定图提示词.txt', content: setupTxt });
+      if (stage === 'storyboard' || stage === 'all') files.push({ name: '02_分镜图提示词.txt', content: storyTxt });
+      // 样张图入包：飞书特化风格必须（画风锚，设定图阶段用一次）；只在 assets/all 阶段入
+      if (styleRefPacked && stage !== 'storyboard') {
         files.push({ name: 'style-ref.png', b64: readFileSync(styleRef).toString('base64') });
       }
-      const zipPath = packZip({ title, out, files });
-      console.log(`✅ 出图包 → ${zipPath}`);
-      console.log(`   内容：说明.txt + 01_设定图提示词.txt(${sheetCount}张) + 02_分镜图提示词.txt(${shotCount}镜)${styleRefPacked ? ' + style-ref.png' : ''}`);
+      const zipName = stage === 'assets' ? `${title}-设定图包.zip` : stage === 'storyboard' ? `${title}-分镜图包.zip` : `${title}-出图包.zip`;
+      const zipPath = packZip({ title, out, files, zipName });
+      const stageLabel = stage === 'assets' ? '设定图包' : stage === 'storyboard' ? '分镜图包' : '出图包';
+      const contentLabel = [
+        stage !== 'storyboard' ? `01_设定图提示词.txt(${sheetCount}张)` : null,
+        stage !== 'assets' ? `02_分镜图提示词.txt(${shotCount}镜)` : null,
+      ].filter(Boolean).join(' + ');
+      console.log(`✅ ${stageLabel} → ${zipPath}`);
+      console.log(`   内容：说明.txt + ${contentLabel}${styleRefPacked && stage !== 'storyboard' ? ' + style-ref.png' : ''}`);
       console.log(`   比例 ${ratio} · 画风「${style}」${negative ? ` · 负面词「${negative}」` : ''}`);
-      console.log(`   用法：整个 zip 发给 GPT，GPT 会自己按说明.txt 完成全部步骤`);
+      if (stage === 'assets') console.log(`   用法：整个 zip 发给 GPT → 出设定图 → 回传审资产 → 确认后 --stage storyboard`);
+      else if (stage === 'storyboard') console.log(`   用法：分镜图包 + 已确认的设定图一起丢给 GPT → 出分镜图 → 回传`);
+      else console.log(`   用法：整个 zip 发给 GPT，GPT 会自己按说明.txt 完成全部步骤`);
       break;
     }
     case 'place': {
@@ -499,12 +565,13 @@ function main(argv) {
       const castS = flag(rest, '--cast-script');
       const artS = flag(rest, '--art-script');
       const sbS = flag(rest, '--sb-script');
-      const cast = flag(rest, '--cast');
-      const art = flag(rest, '--art');
-      const sb = flag(rest, '--storyboard');
-      const script = flag(rest, '--script');
-      const outline = flag(rest, '--outline');
       const out = flag(rest, '--out', '.');
+      // 统一绝对路径：report 在各 JSON 目录 cwd 跑，相对路径会被二次解析（cwd 叠加）出错
+      let cast = flag(rest, '--cast'); if (cast) cast = resolve(cast);
+      let art = flag(rest, '--art'); if (art) art = resolve(art);
+      let sb = flag(rest, '--storyboard'); if (sb) sb = resolve(sb);
+      let script = flag(rest, '--script'); if (script) script = resolve(script);
+      let outline = flag(rest, '--outline'); if (outline) outline = resolve(outline);
 
       if (!castS && !artS && !sbS) {
         console.error('❌ render 需要至少一个 --cast-script / --art-script / --sb-script');
@@ -512,18 +579,30 @@ function main(argv) {
       }
       // 各 skill 的 render 命令把 HTML 打到 stdout（SKILL 里靠用户重定向 `> report.html` 落盘）。
       // novel-assets 补 report 要自动落盘：捕获 stdout 写约定命名，缺哪个跳过哪个
-      const report = (scriptPath, args, file) => {
-        const r = runScript(scriptPath, args);
+      const report = (scriptPath, args, file, dir) => {
+        const r = runScript(scriptPath, args, { cwd: dir });
         if (r.status === 0) {
-          mkdirSync(out, { recursive: true });
-          writeFileSync(join(out, file), r.stdout ?? '', 'utf8');
-          console.log(`✅ 补 report → ${join(out, file)}`);
+          mkdirSync(dir, { recursive: true });
+          writeFileSync(join(dir, file), r.stdout ?? '', 'utf8');
+          console.log(`✅ 补 report → ${join(dir, file)}`);
         }
         return r.status === 0;
       };
-      if (castS && cast) ok = report(castS, ['render', cast, '--html'], 'cast-report.html') && ok;
+      // 源头修复（2026-08-29）：各 skill 的 render 从「JSON 所在目录」解析图片相对路径（images/、E01-NN/），
+      // 且 report 写到各段目录。以前在项目根跑找不到图 → 逼人手动 cd 到各段补 report → 漏参数 → 门误判。
+      // 现在一条命令在正确 cwd 跑完 + 参数全传 + 自动同步设定图，无需手动。
+      const syncImages = (dir) => { // 把 out/images/ 的设定图复制到该 JSON 目录（report 嵌设定图用）
+        const src = join(out, 'images');
+        if (!existsSync(src)) return;
+        const dst = join(dir, 'images');
+        mkdirSync(dst, { recursive: true });
+        for (const f of readdirSync(src)) {
+          if (f.endsWith('.png')) copyFileSync(join(src, f), join(dst, f));
+        }
+      };
+      if (castS && cast) { syncImages(dirname(cast)); ok = report(castS, ['render', cast, '--html'], 'cast-report.html', dirname(cast)) && ok; }
       else if (castS) console.log('ℹ️ 有 --cast-script 但缺 --cast，跳过角色报告');
-      if (artS && art) ok = report(artS, ['render', art, '--html'], 'art-report.html') && ok;
+      if (artS && art) { syncImages(dirname(art)); ok = report(artS, ['render', art, '--html'], 'art-report.html', dirname(art)) && ok; }
       else if (artS) console.log('ℹ️ 有 --art-script 但缺 --art，跳过美术报告');
       if (sbS && sb) {
         // storyboard render 需要：--script <剧本.json>（不是 storyboard 自己）+ --cast/--art 供 @绑定
@@ -534,7 +613,8 @@ function main(argv) {
         if (art) args.push('--art', art);
         if (script) args.push('--script', script);
         if (outline) args.push('--outline', outline);
-        ok = report(sbS, args, 'storyboard-report.html') && ok;
+        syncImages(dirname(sb));
+        ok = report(sbS, args, 'storyboard-report.html', dirname(sb)) && ok;
       }
       else if (sbS) console.log('ℹ️ 有 --sb-script 但缺 --storyboard，跳过分镜报告');
       if (!ok) process.exit(1);

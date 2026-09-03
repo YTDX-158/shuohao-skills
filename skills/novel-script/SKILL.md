@@ -91,6 +91,15 @@ node {baseDir}/scripts/novel-script.mjs seed <outline.json> --eps 1-3 > <workdir
 
 写完把 `seedNote` 删掉。
 
+### 保留原文模式（默认开 · `params.preserveOriginal: true`）
+
+**默认状态不改剧情和台词。** 素材是已有剧本/小说时，台词与剧情**逐字保留**——本 skill 只做结构化（拆句、标说话人、补动作节拍），不浓缩、不改写。对应的两个硬门自动放行：
+
+- **时长门**：`targetSeconds` 不卡（preserve 时跳过）——时长是参考不是约束
+- **单句字数门**：`maxLineChars` 不拦（preserve 时跳过）——长句保留原文
+
+只有用户**明确要求改戏/改编**时才在 `script.json` 的 `params` 显式写 `"preserveOriginal": false`，恢复正常校验。改戏由用户发起，不是默认。
+
 ### Step 3 — 校验 ⛔ 不能跳
 
 ```bash

@@ -50,37 +50,43 @@ novel-outline → characters → art → script → storyboard → ★ novel-ass
 
 ## 人机配合（本 skill 最特别的地方）
 
-**图是 GPT 网页版生成的**——Claude 替代不了这个环节，因为 GPT Image 2 在用户的 Plus 账号里。**用户只操作两次：丢 zip 进去，丢 zip 回来。** GPT 自己完成全部步骤（先生成设定图→记住形象→再生成分镜图→打包交付）。
+**图是 GPT 网页版生成的**——Claude 替代不了这个环节，因为 GPT Image 2 在用户的 Plus 账号里。**默认两阶段出图**（防资产错→分镜全废）：先出设定图→你审资产→确认后再出分镜图。每阶段用户操作两次：丢 zip 进去、丢 zip 回来。demo 想省事用 `--stage all` 一次到位（操作缩回 2 次）。
 
 ```
-① run 产出「出图包.zip」──→ ② 用户把 zip 整个丢给 GPT（网页版，GPT Image 2）
-                                    ↓
-③ GPT 读说明.txt 自己完成全部：设定图→记住→分镜图→打包交付
-                                    ↓
-④ 用户把 GPT 交付的 zip 丢回来
-                                    ↓
+① run --stage assets 出「设定图包.zip」──→ ② 丢给 GPT → 出全部设定图 → 回传
+③ 你审资产（不合适 → 只重出该张，不连累分镜）
+④ 资产确认 → run --stage storyboard 出「分镜图包.zip」
+   （分镜图包 + 确认的设定图一起丢给 GPT）→ 出全部分镜图 → 回传
 ⑤ place 归位图 ──→ ⑥ render 补 report → ✅ 闭环
 ```
 
 | 环节 | 谁 | 干什么 |
 |------|----|--------|
-| ① run | Claude | 产出 `<剧名>-出图包.zip`（说明.txt + 01_设定图提示词.txt + 02_分镜图提示词.txt） |
-| ② 丢给 GPT | 用户 | 把 zip 整个发给 GPT（不拆开、不复制文本） |
-| ③ GPT 自己完成 | GPT | 读说明.txt → 生成16张设定图记住形象 → 生成36张分镜图引用设定图 → 打包交付 |
-| ④ 丢回来 | 用户 | 把 GPT 交付的 zip 发给 Claude |
-| ⑤ place | Claude | 按命名规则把图归位到 `images/` 和 `<段号>/` |
-| ⑥ render | Claude | 重新生成 report，让图进报告 |
+| ① run --stage assets | Claude | 产出 `<剧名>-设定图包.zip`（说明.txt + 01_设定图提示词.txt） |
+| ② 丢给 GPT | 用户 | 把设定图包 zip 整个发给 GPT（不拆开、不复制文本） |
+| ③ 审资产 | 用户 | 设定图回传后审资产，不合适只重出（GPT 会话直接改），不连累分镜 |
+| ④ run --stage storyboard | Claude | 资产确认后出 `<剧名>-分镜图包.zip`；用户把分镜图包 + 确认的设定图一起丢给 GPT |
+| ⑤ GPT 出分镜图 | GPT | 读说明.txt → 引用随附设定图 → 生成全部分镜图 → 打包交付 |
+| ⑥ 丢回来 | 用户 | 把 GPT 交付的 zip 发给 Claude |
+| ⑦ place | Claude | 按命名规则把图归位到 `images/` 和 `<段号>/` |
+| ⑧ render | Claude | 重新生成 report，让图进报告 |
+
+**给包分先后（执行纪律，硬规则）**：默认先 `--stage assets` 给设定图包 → 用户审完资产并确认 → 才 `--stage storyboard` 给分镜图包。**不一次给两个**（除非用户明确要 `--stage all` 或说"两个都给我"）。分镜图包技术上随时能生成，但给包的时机卡在资产确认之后——这是防"资产没审就出分镜→资产错全废"的硬纪律，不由执行者临场判断。
 
 **验收标准**：place + render 之后，report 里每张图都显示出来 = 闭环成功。
 
 ## 脚本命令
 
 ```bash
-# ① 产出「出图包.zip」（整个发给 GPT 用）
+# ① 产出「出图包.zip」——两阶段（默认，防资产错→分镜全废）：
+#    先 --stage assets 出设定图包 → 你审资产 → 确认后 --stage storyboard 出分镜图包
+#    demo 想一次到位用 --stage all（旧行为）
 node {baseDir}/scripts/novel-assets.mjs run <剧名> \
   --cast <cast.json> --art <art.json> --storyboard <storyboard.json> \
-  --style "暗黑写实电影感" --out <输出目录>
-# → <剧名>-出图包.zip（说明.txt + 01_设定图提示词.txt + 02_分镜图提示词.txt）
+  --style "暗黑写实电影感" --stage assets --out <输出目录>
+# → <剧名>-设定图包.zip（说明.txt + 01_设定图提示词.txt）→ 丢 GPT 出设定图 → 回传审资产
+# 资产确认后：--stage storyboard → <剧名>-分镜图包.zip（说明.txt + 02_分镜图提示词.txt；
+#   说明.txt 提示「引用随附已确认设定图」——把设定图一起丢给 GPT）
 # --ratio 可不传：默认取 storyboard.json 顶层 ratio（seed 时 --outline 带出的锁定比例），再兜底 9:16
 # 依赖 python zipfile（UTF-8 文件名标志防中文乱码）
 

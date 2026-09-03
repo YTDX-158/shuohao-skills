@@ -97,6 +97,7 @@ eq(gateReport(FIXTURE).length, 10, '十道门');
 {
   const doc = clone(FIXTURE);
   for (let i = 0; i < 30; i++) doc.episodes[0].scenes[0].flow.push({ action: `加戏第 ${i} 拍。` });
+  doc.params = { preserveOriginal: false }; // 击穿用例显式关掉保留原文模式，让时长门生效
   const g = gate(doc, 'duration');
   ok(!g.ok, '写超时长被拦');
   ok(g.detail.includes('超'), '超时报得出秒数');
@@ -105,6 +106,7 @@ eq(gateReport(FIXTURE).length, 10, '十道门');
 {
   const doc = clone(FIXTURE);
   doc.episodes[0].scenes = [doc.episodes[0].scenes[0]];
+  doc.params = { preserveOriginal: false }; // 同上
   const g = gate(doc, 'duration');
   ok(!g.ok, '写欠时长被拦');
   ok(g.detail.includes('欠'), '欠时报得出秒数');
@@ -112,13 +114,14 @@ eq(gateReport(FIXTURE).length, 10, '十道门');
 // duration — 容差可配
 {
   const doc = clone(FIXTURE);
-  doc.params = { tolerance: 0.01 };
+  doc.params = { tolerance: 0.01, preserveOriginal: false };
   ok(!gate(doc, 'duration').ok, '容差收紧到 1% 后原样例不再达标');
 }
 // line-length
 {
   const doc = clone(FIXTURE);
   doc.episodes[0].scenes[0].flow.push({ speaker: 'C03', line: '这句台词故意写得非常非常长，长到一口气根本读不完，纯粹为了击穿单句上限这道门而存在。' });
+  doc.params = { preserveOriginal: false }; // 击穿用例显式关掉保留原文模式，让单句字数门生效
   const g = gate(doc, 'line-length');
   ok(!g.ok, '超长台词被拦');
   ok(g.detail.includes('字'), '报出字数');

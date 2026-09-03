@@ -25,6 +25,7 @@ export const DEFAULT_PARAMS = {
   tolerance: 0.15,     // 时长容差 ±15%
   maxLineChars: 35,    // 单句台词上限——一口气说不完的台词也生成不了
   hookWindow: 3,       // 开场钩子必须在全集前几拍内兑现——短剧开场 3 秒定生死
+  preserveOriginal: true, // 保留原文模式（默认开）：逐字搬运不改剧情台词，时长/单句字数门放行（改戏时才显式关掉）
 };
 
 export function paramsOf(doc) {
@@ -135,7 +136,8 @@ export function gateReport(doc, ctx = {}) {
     const label = `第 ${ep?.ep} 集`;
 
     // 时长预算：写超写欠都在这层拦，别流到生成环节才发现
-    if (ep?.targetSeconds > 0) {
+    // 保留原文模式（默认开）下不卡时长——素材是已有剧本时，时长是参考不是约束
+    if (!params.preserveOriginal && ep?.targetSeconds > 0) {
       const lo = ep.targetSeconds * (1 - params.tolerance);
       const hi = ep.targetSeconds * (1 + params.tolerance);
       if (st.est < lo) bad.duration.push(`${label}欠 ${r1(lo - st.est)} 秒（估 ${st.est}s / 目标 ${ep.targetSeconds}s）`);
@@ -174,7 +176,7 @@ export function gateReport(doc, ctx = {}) {
           if (QUOTE_RE.test(b.action)) bad.prose.push(`${label} ${sc?.sceneId ?? '?'}`);
         }
         if (typeof b?.line === 'string') {
-          if (lineChars(b.line) > params.maxLineChars) {
+          if (!params.preserveOriginal && lineChars(b.line) > params.maxLineChars) {
             bad.lineLen.push(`${label}「${b.line.slice(0, 12)}…」${lineChars(b.line)} 字`);
           }
           if (b.speaker !== 'VO' && !cast.has(b.speaker)) {
@@ -227,8 +229,8 @@ export function gateReport(doc, ctx = {}) {
   const SKIP_OUTLINE = '未提供 outline.json，本门跳过（视为通过）';
   const SKIP_ART = '未提供 art.json，本门跳过（视为通过）';
 
-  add('duration', `每集时长在目标 ±${Math.round(params.tolerance * 100)}% 内`, eps.length > 0 && bad.duration.length === 0, bad.duration.join('；'));
-  add('line-length', `单句台词 ≤ ${params.maxLineChars} 字`, bad.lineLen.length === 0, bad.lineLen.join('；'));
+  add('duration', `每集时长在目标 ±${Math.round(params.tolerance * 100)}% 内${params.preserveOriginal ? '（保留原文模式·不卡时长）' : ''}`, eps.length > 0 && bad.duration.length === 0, bad.duration.join('；'));
+  add('line-length', `单句台词 ≤ ${params.maxLineChars} 字${params.preserveOriginal ? '（保留原文模式·长句放行）' : ''}`, bad.lineLen.length === 0, bad.lineLen.join('；'));
   add('speaker', '说话人在本场人物里，或明确标画外音 VO', bad.speaker.length === 0, bad.speaker.join('；'));
   add('hook-cliff', '每集开场钩子与结尾悬念都落在纸面', eps.length > 0 && bad.hook.length === 0, bad.hook.join('；'));
   add('hook-open', `钩子的具象在全集前 ${params.hookWindow} 拍内兑现（hookBeat 认领）`, eps.length > 0 && bad.hookOpen.length === 0, bad.hookOpen.join('；'));

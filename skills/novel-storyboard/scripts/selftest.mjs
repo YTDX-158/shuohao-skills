@@ -186,16 +186,18 @@ eq(paramsOf({ params: { maxShotSeconds: 4 } }).maxShotSeconds, 4, '镜上限可�
   ok(!g.ok, '台词装不进镜被拦');
   ok(g.detail.includes('E01-05#1'), '点名到镜');
 }
-// ep-duration
+// ep-duration（保留原文模式默认开=不卡时长；击穿用例显式关掉 preserveOriginal）
 {
   const doc = clone(FIXTURE);
   for (const s of doc.episodes[0].segments) for (const c of s.shots) c.seconds = Math.min(6, c.seconds + 2);
-  ok(gate(doc, 'ep-duration').detail.includes('超'), '写超总时长被拦');
+  const ctx = { ...CTX, script: { ...CTX.script, params: { preserveOriginal: false } } };
+  ok(gate(doc, 'ep-duration', ctx).detail.includes('超'), '写超总时长被拦');
 }
 {
   const doc = clone(FIXTURE);
   for (const s of doc.episodes[0].segments) for (const c of s.shots) c.seconds = Math.max(1, c.seconds - 2);
-  ok(gate(doc, 'ep-duration').detail.includes('欠'), '写欠总时长被拦');
+  const ctx = { ...CTX, script: { ...CTX.script, params: { preserveOriginal: false } } };
+  ok(gate(doc, 'ep-duration', ctx).detail.includes('欠'), '写欠总时长被拦');
 }
 // crowd
 {
