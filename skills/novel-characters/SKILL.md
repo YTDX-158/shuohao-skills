@@ -88,6 +88,17 @@ node {baseDir}/scripts/novel-characters.mjs styles   # 打印预设的完整内�
 
 版面规则（16:9 三区、比例、细节让位）**不随风格变**，变的只有渲染质感。
 
+### styleMode — 配方落点决策（画风定好后必答）
+
+画风定好后，再定**配方落点**（写进 cast.json 顶层 `styleMode`，assemble 用 `--style-mode` 传）：
+
+| 情况 | styleMode | 图指令怎么写 |
+| --- | --- | --- |
+| 画风靠纯文本配方能稳定复刻（市面预设 / 锁定配方不靠图）| `preset`（默认）| 照 profile-pass 现状：配方嵌 `image.sheet` |
+| 画风依赖样张图复刻 / 怕配方重复嵌几十次漂移（柔彩墨线这类）| `session` | **配方不嵌**——`image.sheet` 只主体+版面（剥留清单见 profile-pass 第 5/6 条）；配方+样张留项目目录，供后续开 GPT 会话钉 |
+
+**拿不准就问用户，别默认。** 选 `session` 时，art / storyboard 两层的顶层 `styleMode` 要同步置 `session`（seed 自动带；手填剧记得自己对齐）。
+
 ### Step 1 — 定位输入
 
 用户给文件路径就直接用。直接粘正文的，**先落到一个临时 .txt**——后面校验「引文是否逐字」要拿原文比对，没有原文文件这步就没法做。
@@ -177,8 +188,11 @@ node {baseDir}/scripts/novel-characters.mjs merge <workdir> --apply merges.json 
 ```bash
 node {baseDir}/scripts/novel-characters.mjs assemble <workdir> \
   --source <书名> --lang <lang> --style <style> \
+  [--style-mode preset|session] \
   --out <输出目录>/<书名>-cast.json
 ```
+
+`--style-mode` 缺省 `preset`；选 `session`（画风钉会话）时显式传，写进 cast.json 顶层。
 
 坏卡会被逐个点名——哪份 `card-*.json` 坏了就只重跑那个角色，其他不用动。
 

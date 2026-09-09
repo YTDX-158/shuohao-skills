@@ -17,6 +17,8 @@
 
 `style`：全片视觉风格声明（如「写实向半厚涂」「真人电影风格」），出现在每镜提示词头部，同剧画风统一。`charsPerSecond`：中文台词语速（默认 5.5 字/秒）。
 
+`styleMode`（可选）：画风模式 `preset`（默认）/ `session`（外部风格库钉会话）。**novel-assets 以本文件的 styleMode 为主源**（D3）：`session` 时出图包说明.txt 顶部写守门句「若未在会话开头收到画风先停下提醒」，且不传 `--style-ref`（画风全信会话）。缺省按 `preset`，老 JSON 不回填。
+
 ## segment（段 · 可选分组）
 
 | 字段 | 类型 | 说明 |

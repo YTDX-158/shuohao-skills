@@ -476,7 +476,7 @@ const normalise = (s) => String(s).replace(/\s+/g, '');
  * @param sourceText 原文；null 则跳过逐字引文校验
  * @param lang       报告语言，决定人类可读字段该是什么语言
  */
-export function validateCast(characters, sourceText, lang = DEFAULT_LANG, style = DEFAULT_STYLE) {
+export function validateCast(characters, sourceText, lang = DEFAULT_LANG, style = DEFAULT_STYLE, styleMode = 'preset') {
   const problems = [];
   const flatSource = sourceText === null ? null : normalise(sourceText);
   const at = (name, msg) => problems.push(`[${name}] ${msg}`);
@@ -669,10 +669,18 @@ export function validateCast(characters, sourceText, lang = DEFAULT_LANG, style 
       if (style === 'ghibli' && !bansRealism) {
         at(name, 'style=ghibli 的 negativePrompt 必须禁 photorealistic／3d render');
       }
-      const preset = stylePreset(style);
-      if (typeof image.sheet === 'string' && !image.sheet.includes(preset.render)) {
-        at(name, `image.sheet 里没有 style=${style} 的渲染句，画风会飘`);
+      // render 门只对 preset 轨强制：session 轨画风钉会话，sheet 只主体+版面，缺渲染句不是错
+      if (styleMode !== 'session') {
+        const preset = stylePreset(style);
+        if (typeof image.sheet === 'string' && !image.sheet.includes(preset.render)) {
+          at(name, `image.sheet 里没有 style=${style} 的渲染句，画风会飘`);
+        }
       }
+    }
+    // session 轨独立残留检测：任何 style 名下都查（画风钉会话时 sheet 不该有渲染配方）
+    if (image && styleMode === 'session' && typeof image.sheet === 'string' && image.sheet
+        && /Semi-realistic character illustration|Hand-painted anime cel/.test(image.sheet)) {
+      console.warn(`⚠️ [${name}] styleMode=session 但 image.sheet 疑似残留配方（渲染句）——画风钉会话时 sheet 只写主体+版面，见 profile-pass.md`);
     }
 
     // 只有这三种能可靠自动判别，其他语言不猜、跳过——误报比漏报更烦人。
@@ -705,7 +713,7 @@ export function validateCast(characters, sourceText, lang = DEFAULT_LANG, style 
  * 顺序）。不给 order 就保持传入顺序——CLI 按文件名读卡，那是 slug
  * 字典序不是戏份序，所以报告要「按戏份排序」就必须给 order。
  */
-export function assembleCast(cards, { source, lang = DEFAULT_LANG, style = DEFAULT_STYLE, summary = '', ui = null, order = null } = {}) {
+export function assembleCast(cards, { source, lang = DEFAULT_LANG, style = DEFAULT_STYLE, styleMode = 'preset', summary = '', ui = null, order = null } = {}) {
   const rank = (c) => {
     const i = IMPORTANCE.indexOf(c?.importance);
     return i < 0 ? IMPORTANCE.length : i; // 越界的排最后，让 validate 去报，这里不崩
@@ -717,7 +725,7 @@ export function assembleCast(cards, { source, lang = DEFAULT_LANG, style = DEFAU
     .map((card, i) => [card, i])
     .sort((a, b) => rank(a[0]) - rank(b[0]) || byOrder(a[0]) - byOrder(b[0]) || a[1] - b[1])
     .map(([card]) => card);
-  const cast = { source, lang, style };
+  const cast = { source, lang, styleMode, style };
   if (ui) cast.ui = ui;
   cast.summary = summary;
   cast.characters = characters;
@@ -728,9 +736,10 @@ export function assembleCast(cards, { source, lang = DEFAULT_LANG, style = DEFAU
 /* render — markdown                                                   */
 /* ------------------------------------------------------------------ */
 
-export function renderMarkdown(characters, source, summary = '', lang = DEFAULT_LANG, ui = null) {
+export function renderMarkdown(characters, source, summary = '', lang = DEFAULT_LANG, ui = null, styleMode = 'preset') {
   const t = strings(lang, ui);
   const out = [t.mdTitle(source), '', t.mdCast(characters.length, characters.map((c) => c.name).join('、')), ''];
+  if (styleMode === 'session') out.push('> styleMode=session · 画风由外部会话钉住（image.sheet 不含配方，出图时在会话里带画风）', '');
   if (summary) out.push(t.mdSynopsis, '', summary, '');
 
   for (const c of characters) {
@@ -1095,8 +1104,8 @@ function renderGraph(ordered, t) {
  * `<` 转成 <：JSON 里 `<` 只可能出现在字符串值中，整体替换是安全的，
  * 而不转的话正文里一个 `</script` 就能把这个数据块提前截断。
  */
-function embedCast(characters, source, summary, lang, ui, style) {
-  const data = { source, lang, style, summary, ...(ui ? { ui } : {}), characters };
+function embedCast(characters, source, summary, lang, ui, style, styleMode = 'preset') {
+  const data = { source, lang, style, styleMode, summary, ...(ui ? { ui } : {}), characters };
   return JSON.stringify(data).replace(/</g, '\\u003c');
 }
 
@@ -1107,6 +1116,7 @@ export function renderHtml(
   lang = DEFAULT_LANG,
   ui = null,
   style = DEFAULT_STYLE,
+  styleMode = 'preset',
 ) {
   const t = strings(lang, ui);
   const shots = characters.filter((c) => c.sheetImage).length;
@@ -1391,6 +1401,7 @@ button{font-family:inherit}
   </div>
   <div class="topmeta">
     <span>${esc(t.kicker)}</span><i>·</i>
+    ${styleMode === 'session' ? '<span class="mode-session">画风·会话钉住（sheet 不含配方）</span>' : ''}
     <span>${esc(t.counts(characters.length, shots))}</span>
     <button class="expo" data-name="${esc(slug(source))}-cast.json">${esc(t.exportJson)}</button>
   </div>
@@ -1422,7 +1433,7 @@ button{font-family:inherit}
   <img alt="">
 </div>
 
-<script type="application/json" id="cast-data">${embedCast(characters, source, summary, lang, ui, style)}</script>
+<script type="application/json" id="cast-data">${embedCast(characters, source, summary, lang, ui, style, styleMode)}</script>
 
 <script>
 const L = ${JSON.stringify({ copied: t.copied, failed: t.copyFailed })};
@@ -1674,6 +1685,7 @@ function loadCast(path) {
     lang: Array.isArray(raw) ? DEFAULT_LANG : (raw.lang ?? DEFAULT_LANG),
     ui: Array.isArray(raw) ? null : (raw.ui ?? null),
     style: Array.isArray(raw) ? DEFAULT_STYLE : (raw.style ?? DEFAULT_STYLE),
+    styleMode: Array.isArray(raw) ? 'preset' : (raw.styleMode ?? 'preset'),
   };
 }
 
@@ -1730,13 +1742,17 @@ function main(argv) {
   if (cmd === 'assemble') {
     const [workdir] = rest;
     if (!workdir || workdir.startsWith('--')) {
-      throw new Error('用法：assemble <workdir> --source <书名> [--lang zh] [--style realistic] [--out cast.json]');
+      throw new Error('用法：assemble <workdir> --source <书名> [--lang zh] [--style realistic] [--style-mode preset|session] [--out cast.json]');
     }
     const dir = resolve(workdir);
     const sourceName = flag(rest, '--source');
     if (!sourceName) throw new Error('assemble 需要 --source <书名>');
     const lang = flag(rest, '--lang', DEFAULT_LANG);
     const style = flag(rest, '--style', DEFAULT_STYLE);
+    const styleMode = flag(rest, '--style-mode', 'preset');
+    if (styleMode !== 'preset' && styleMode !== 'session') {
+      throw new Error(`--style-mode 只接受 preset/session，实际是 ${JSON.stringify(styleMode)}`);
+    }
 
     const files = readdirSync(dir).filter((f) => /^card-.*\.json$/.test(f)).sort();
     if (!files.length) throw new Error(`${dir} 里没有 card-*.json`);
@@ -1793,7 +1809,7 @@ function main(argv) {
       process.exit(1);
     }
 
-    const cast = assembleCast(cards, { source: sourceName, lang, style, summary, ui, order });
+    const cast = assembleCast(cards, { source: sourceName, lang, style, styleMode, summary, ui, order });
     const json = JSON.stringify(cast, null, 2) + '\n';
     const out = flag(rest, '--out');
     if (out) {
@@ -1808,12 +1824,12 @@ function main(argv) {
   if (cmd === 'validate') {
     const [castPath, bookPath] = rest;
     if (!castPath) throw new Error('用法：validate <cast.json> <book.txt>');
-    const { characters, summary, lang: castLang, ui, style: castStyle } = loadCast(castPath);
+    const { characters, summary, lang: castLang, ui, style: castStyle, styleMode: castStyleMode } = loadCast(castPath);
     const lang = flag(rest, '--lang', castLang);
     const style = flag(rest, '--style', castStyle);
     const source = bookPath ? readFileSync(resolve(bookPath), 'utf8') : null;
     if (!bookPath) console.error('⚠️ 没给原文，跳过逐字引文校验');
-    const problems = validateCast(characters, source, lang, style);
+    const problems = validateCast(characters, source, lang, style, castStyleMode);
     // 锁定画风名（如「暗黑写实电影感」）不是渲染预设——接受，style-match 门对非预设跳过；
     // 只提示不拦（画风源头在 characters Step 0.5，validateCast 已宽松处理）
     if (style && !SUPPORTED_STYLES.includes(style)) {
@@ -1836,7 +1852,7 @@ function main(argv) {
       for (const p of problems) console.error('  ' + p);
       process.exit(1);
     }
-    console.log(`✓ ${characters.length} 个角色全部通过校验（lang=${lang}, style=${style}）`);
+    console.log(`✓ ${characters.length} 个角色全部通过校验（lang=${lang}, style=${style}, styleMode=${castStyleMode}）`);
     return;
   }
 
@@ -1847,7 +1863,7 @@ function main(argv) {
     const imagesDir = flag(rest, '--images', 'images');
     const sourceFlag = flag(rest, '--source');
 
-    const { characters, source, summary, lang: castLang, ui, style } = loadCast(castPath);
+    const { characters, source, summary, lang: castLang, ui, style, styleMode: castStyleMode } = loadCast(castPath);
     const lang = flag(rest, '--lang', castLang);
     const title = sourceFlag ?? source ?? basename(castPath).replace(/\.[^.]+$/, '');
 
@@ -1860,8 +1876,8 @@ function main(argv) {
 
     process.stdout.write(
       (html
-        ? renderHtml(characters, title, summary, lang, ui, style)
-        : renderMarkdown(characters, title, summary, lang, ui)) + '\n',
+        ? renderHtml(characters, title, summary, lang, ui, style, castStyleMode)
+        : renderMarkdown(characters, title, summary, lang, ui, castStyleMode)) + '\n',
     );
     return;
   }

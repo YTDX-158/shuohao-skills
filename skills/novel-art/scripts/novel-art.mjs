@@ -94,7 +94,7 @@ export function seedFromOutline(outline) {
     };
   });
 
-  return { source: outline?.source ?? '', style: DEFAULT_STYLE, scenes };
+  return { source: outline?.source ?? '', styleMode: outline?.styleMode ?? 'preset', style: DEFAULT_STYLE, scenes };
 }
 
 /* ------------------------------------------------------------------ */
@@ -188,11 +188,19 @@ export function gateReport(doc, castNames = null) {
       else if (!thText(s?.changes)) bad.variant.push(`${label} 缺 changes`);
     }
 
-    // 风格与反向词匹配 + sheet 带渲染句
+    // 风格与反向词匹配 + sheet 带渲染句（style-match 门）
     const bansRealism = /photorealistic|3d render/i.test(neg);
     if (style === 'realistic' && bansRealism) bad.style.push(`${label} 禁了 photorealistic`);
     if (style === 'ghibli' && !bansRealism) bad.style.push(`${label} 没禁 photorealistic`);
-    if (thText(s?.image?.sheet) && !s.image.sheet.includes(preset.render)) bad.style.push(`${label} 的 sheet 缺渲染句`);
+    // render 门只对 preset 轨强制：session 轨画风钉会话，sheet 只主体+版面，缺渲染句不是错
+    if ((doc.styleMode ?? 'preset') === 'session') {
+      const st = s?.image?.sheet;
+      if (typeof st === 'string' && st && /Semi-realistic environment concept art|Hand-painted anime background art/.test(st)) {
+        console.warn(`⚠️ [${label}] styleMode=session 但 sheet 疑似残留配方（渲染句）——画风钉会话时 sheet 只写主体+版面，见 scene-pass.md`);
+      }
+    } else if (thText(s?.image?.sheet) && !s.image.sheet.includes(preset.render)) {
+      bad.style.push(`${label} 的 sheet 缺渲染句`);
+    }
   }
 
   // 道具专属的门
@@ -247,7 +255,13 @@ export function validateArt(doc, castNames = null) {
   if (!doc || typeof doc !== 'object') return ['art.json 不是对象'];
 
   if (!thText(doc.source)) p('缺少 source（剧名/书名）');
-  if (!SUPPORTED_STYLES.includes(doc.style)) p(`style 必须是 ${SUPPORTED_STYLES.join('/')}，实际是 ${JSON.stringify(doc.style)}`);
+  if (!SUPPORTED_STYLES.includes(doc.style)) {
+    if ((doc.styleMode ?? 'preset') === 'session') {
+      console.warn(`ℹ️ style=${doc.style} 不是渲染预设，但 styleMode=session——画风钉会话，允许自定义名（本提示不阻断）`);
+    } else {
+      p(`style 必须是 ${SUPPORTED_STYLES.join('/')}，实际是 ${JSON.stringify(doc.style)}`);
+    }
+  }
 
   const scenes = doc.scenes;
   if (!Array.isArray(scenes) || scenes.length === 0) {
@@ -517,6 +531,9 @@ export function renderMarkdown(doc, lang = null) {
   const t = tOf(lang ?? doc?.lang);
   const props = doc.props ?? [];
   const out = [`# ${t.docTitle(doc.source)}`, '', `> ${t.styleLine(doc.style)}`, ''];
+  if ((doc.styleMode ?? 'preset') === 'session') {
+    out.push('> styleMode=session · 画风由外部会话钉住（sheet 不含配方，出图时在会话里带画风）', '');
+  }
 
   out.push(`## ${t.secList}`, '', mdHead(t.listCols));
   for (const s of doc.scenes) {
@@ -865,6 +882,7 @@ td:first-child{font-family:var(--mono);font-size:12px;color:var(--ink-2);white-s
 <header class="hd">
   <h1>${esc(doc.source)}</h1>
   <span class="sub">${esc(t.kicker)} · ${esc(t.styleLine(doc.style))}</span>
+  ${(doc.styleMode ?? 'preset') === 'session' ? '<span class="mode-session">画风·会话钉住（sheet 不含配方）</span>' : ''}
   <span class="right">
     <span class="gatepill ${failed.length ? 'fail' : 'pass'}">${failed.length ? '✗' : '✓'} ${esc(t.gatePill(gates.length - failed.length, gates.length))}</span>
     <button class="expo" data-name="${esc(slug(doc.source))}-art.json">${esc(t.exportJson)}</button>

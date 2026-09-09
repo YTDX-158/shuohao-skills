@@ -32,7 +32,8 @@
 | 字段 | 必填 | 说明 |
 | --- | --- | --- |
 | `source` | 是 | 剧名/书名 |
-| `style` | 是 | `realistic` / `ghibli`，与 novel-characters 的画风同名对齐（内容是环境版，不带皮肤毛孔那套） |
+| `style` | 是 | `realistic` / `ghibli`，与 novel-characters 的画风同名对齐（内容是环境版，不带皮肤毛孔那套）。`styleMode=session` 时可为自定义画风名（如「柔彩墨线」），校验只提醒不拦 |
+| `styleMode` | 否 | 画风模式：`preset`（默认）——`style` 限内置名且 sheet 必须含渲染句；`session`——外部风格库钉会话，sheet 只主体+版面、`style` 允许自定义名。缺省按 `preset`，老 JSON 不回填 |
 | `scenes` | 是 | 场景数组 |
 | `props` | 否 | **叙事道具**数组——只收有特写、跨集、承载剧情的（3–8 件为宜），场景陈设归场景锚点。选法见 `prop-pass.md` |
 
@@ -48,7 +49,7 @@
 | `lighting` | ≥1 个 | state 中文 / prompt 英文 | **光照状态**：AI 换时段是重新生成不是重新打灯，每个状态必须落成完整提示词 |
 | `image.prompt` | 是 | **英文** | 主视角单图提示词，**必须写明空景无人** |
 | `image.negativePrompt` | 是 | **英文** | **必须禁人**（people/figure/…），这是空景的硬保证 |
-| `image.sheet` | 是 | **英文** | 环境设定图完整版面指令（见 `sheet.md`），必须整段包含当前风格的渲染句 |
+| `image.sheet` | 是 | **英文** | 环境设定图完整版面指令（见 `sheet.md`）。`preset` 时必须整段包含当前风格的渲染句；`styleMode=session` 时**不嵌渲染句**——只写空间是什么、空景、锚点、版面功能（画风由会话钉） |
 | `image.tags` | 是 | 英文 | 风格标签数组 |
 | `variantOf` | 否 | — | 变体的母场景 id。AI 生成一个新景很便宜，但**变体复用母场景资产更一致**——outline 里带 reusePlan 的场景优先做成变体 |
 | `changes` | variantOf 时必填 | 中文 | 相对母场景改了什么（换时段/换天气/换前景/删道具） |
@@ -68,7 +69,7 @@
 | `carriedBy` | 否 | 中文 | 谁带着它，自由文本 |
 | `image.prompt` | 是 | **英文** | 白底主视角，**必须带尺度短语、无人无手** |
 | `image.negativePrompt` | 是 | **英文** | **必须禁人且禁手**（hands/fingers） |
-| `image.sheet` | 是 | **英文** | 设定图版面指令，**必须写明 pure white background** + 当前风格渲染句 |
+| `image.sheet` | 是 | **英文** | 设定图版面指令，**必须写明 pure white background**。`preset` 时加当前风格渲染句；`styleMode=session` 时**不加**（画风由会话钉） |
 | `usage` | 否 | — | `{episodes, beats}` |
 
 ## 硬规则（11 道质量门，全是代码）
@@ -79,7 +80,7 @@
 4. 出图提示词（主图/反向/设定图/光照）全部英文
 5. 提示词不含角色名（`validate --cast cast.json` 才查，不给就明说跳过）
 6. 变体引用完整：`variantOf` 指向存在的场景且带 `changes`
-7. 风格与反向词匹配：`realistic` 不禁 photorealistic、`ghibli` 必须禁；`sheet` 必须含渲染句
+7. 风格与反向词匹配：`realistic` 不禁 photorealistic、`ghibli` 必须禁；`sheet` 必须含渲染句（**仅 `styleMode=preset` 时强制**；`session` 跳过该门，画风由会话钉、sheet 只主体+版面）
 
 道具专属四道：
 

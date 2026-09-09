@@ -110,7 +110,7 @@ function resolveBinds(binds, castLookup, artNames) {
 /* ------------------------------------------------------------------ */
 
 /** 设定图任务文本：指令 + 规范 + 打包要求 + 逐张提示词 */
-function buildSetupTask({ name: title, cast, art, ratio, style }) {
+function buildSetupTask({ name: title, cast, art, ratio, style, styleMode = 'preset' }) {
   const lines = [];
   const chars = cast?.characters ?? cast ?? [];
   const scenes = art?.scenes ?? [];
@@ -131,7 +131,9 @@ function buildSetupTask({ name: title, cast, art, ratio, style }) {
   lines.push(`你是一名美术总监，为短剧《${title}》一次性生成全部 ${charOk.length + sceneOk.length + propOk.length} 张设定图。`);
   lines.push('');
   lines.push('【统一要求】');
-  lines.push(`1. 所有图统一画风「${style}」，同一世界观，同一角色跨图长相一致。比例按每张提示词内的版面要求（设定图为资产图，含多视角+细节特写）。`);
+  lines.push(styleMode === 'session'
+    ? `1. 本剧画风用会话开头钉住的那个（你已记住；本包 sheet 提示词不含画风，只写主体+版面），同一世界观，同一角色跨图长相一致。比例按每张提示词内的版面要求（设定图为资产图，含多视角+细节特写）。`
+    : `1. 所有图统一画风「${style}」，同一世界观，同一角色跨图长相一致。比例按每张提示词内的版面要求（设定图为资产图，含多视角+细节特写）。`);
   lines.push('2. 每张图是一张标准设定图/资产图：包含多视角 + 细节特写（见每张提示词的具体版面要求）。');
   lines.push('3. 依次生成，每张都要记住已生成的角色设定，保证整批画风连贯。');
   lines.push('4. 纯白背景（场景图的背景由提示词决定），画面干净，无文字、无水印、无边框。');
@@ -161,7 +163,7 @@ function buildSetupTask({ name: title, cast, art, ratio, style }) {
 }
 
 /** 分镜图任务文本：指令 + 参考图清单 + 逐镜绑定 + frame + 打包要求 */
-function buildStoryboardTask({ name: title, storyboard, cast, art, ratio, style, castLookup, artNames }) {
+function buildStoryboardTask({ name: title, storyboard, cast, art, ratio, style, styleMode = 'preset', castLookup, artNames }) {
   const lines = [];
   const eps = storyboard?.episodes ?? [];
   const segments = eps.flatMap(e => e.segments ?? []);
@@ -172,7 +174,9 @@ function buildStoryboardTask({ name: title, storyboard, cast, art, ratio, style,
   lines.push(`你是一名美术总监，为短剧《${title}》生成全部 ${shots.length} 张分镜图（关键帧）。`);
   lines.push('');
   lines.push('【统一要求】');
-  lines.push(`1. 所有分镜图统一比例 ${ratio}${ratioOrientation(ratio) ? `（${ratioOrientation(ratio)}）` : ''}，统一画风「${style}」，与上面生成的设定图保持同一世界观。`);
+  lines.push(styleMode === 'session'
+    ? `1. 所有分镜图统一比例 ${ratio}${ratioOrientation(ratio) ? `（${ratioOrientation(ratio)}）` : ''}，画风继承上面设定图（会话开头钉住的那个），保持同一世界观。`
+    : `1. 所有分镜图统一比例 ${ratio}${ratioOrientation(ratio) ? `（${ratioOrientation(ratio)}）` : ''}，统一画风「${style}」，与上面生成的设定图保持同一世界观。`);
   lines.push('2. 每一镜都引用你上面生成的设定图：角色的脸/衣服用对应角色设定图，环境用对应场景设定图，道具用对应道具设定图。');
   lines.push('3. 我已在每镜标注参考，照着引用你刚生成的那张设定图，不要自己另造形象。');
   lines.push('4. 按 E01-01 → E01-11 顺序依次生成，一镜一张，生成完再生成下一镜。');
@@ -219,13 +223,24 @@ function buildStoryboardTask({ name: title, storyboard, cast, art, ratio, style,
 }
 
 /** 说明.txt：给 GPT 的总指令——统一画风 → 设定图 → 记住形象 → 分镜图 → 打包交付 */
-function buildInstruction({ name: title, shotCount, sheetCount, ratio, style, styleRef = false, negative = null, stage = 'all' }) {
+function buildInstruction({ name: title, shotCount, sheetCount, ratio, style, styleMode = 'preset', styleRef = false, negative = null, stage = 'all' }) {
+  const session = styleMode === 'session';
+  // session 轨画风钉会话，样张图是会话的一部分、不入包——style-ref 忽略，防双画风打架
+  const styleRefActive = styleRef && !session;
   // 样张图（画风锚）：只在设定图阶段用一次，防抄长相
-  const styleRefLine = styleRef
+  const styleRefLine = styleRefActive
     ? '\n- style-ref.png — 本剧画风的参考样张（画风锚点）'
     : '';
-  const styleRefSection = styleRef
+  const styleRefSection = styleRefActive
     ? `\n包内 style-ref.png 是本剧画风的参考样张：生成设定图时参考它的光影、材质、上色质感来统一画风；但角色长相严格按提示词描述，不要照搬样张里的人物。`
+    : '';
+  // 画风来源句：preset 配方嵌 sheet（原文）；session 画风在会话钉住，sheet 只主体+版面
+  const styleSection = session
+    ? '画风已在会话开头由你钉住（配方 + 样张图，你已记住）。本包 sheet 提示词只写主体 + 版面、不含画风——出图一律用会话里钉住的那个画风。'
+    : '所有 sheet 提示词已包含本剧画风（同一世界观、同一画风），照画即可。';
+  // 守门句（session 轨）：没收到画风不许直接出图
+  const guardLine = session
+    ? '\n\n【画风守门】若你未在会话开头收到本剧画风（配方/样张），先停下提醒用户补发；不要直接出图——没钉画风就出图会变素。'
     : '';
   // 负面词（GPT 网页版无负面词栏，写成"避免"融进提示词）
   const negativeSection = negative
@@ -239,7 +254,7 @@ function buildInstruction({ name: title, shotCount, sheetCount, ratio, style, st
 - 01_设定图提示词.txt — 全部设定图的提示词（角色/场景/道具）${styleRefLine}
 
 【统一画风】
-所有 sheet 提示词已包含本剧画风（同一世界观、同一画风），照画即可。${styleRefSection}${negativeSection}
+${styleSection}${styleRefSection}${negativeSection}${guardLine}
 
 【本批任务：只生成设定图】
 读 01_设定图提示词.txt，依次生成全部 ${sheetCount} 张设定图。
@@ -288,7 +303,7 @@ zip 内每张图按我给的命名保存，文件名不要改，不要建目录�
 - 02_分镜图提示词.txt — 全部分镜图（关键帧）的提示词，每镜标注了引用哪张设定图${styleRefLine}
 
 【统一画风】
-所有 sheet 提示词已包含本剧画风（同一世界观、同一画风），照画即可。${styleRefSection}${negativeSection}
+${styleSection}${styleRefSection}${negativeSection}${guardLine}
 
 【第 1 步：生成全部设定图】
 读 01_设定图提示词.txt，依次生成全部 ${sheetCount} 张设定图。
@@ -497,6 +512,8 @@ function main(argv) {
       const artData = readJson(art);
       const sbData = readJson(sbPath);
       const style = flag(rest, '--style', sbData.style || '写实');
+      // 画风模式主源 = storyboard.json 顶层 styleMode（D3）；缺失按 preset
+      const styleMode = sbData.styleMode ?? 'preset';
       // 比例源头固化：--ratio 手动优先 → storyboard.json 顶层 ratio（seed 时 --outline 带出）→ 兜底 9:16
       const ratio = String(ratioArg ?? '').trim() || String(sbData?.ratio ?? '').trim() || '9:16';
       // 缺源头字段提醒：独立跑 storyboard（没走 seed --outline）时顶层可能没有 ratio/style，兜底值可能不对
@@ -505,19 +522,22 @@ function main(argv) {
       if (!String(sbData?.style ?? '').trim())
         console.warn('⚠️ storyboard.json 无顶层 style，兜底「写实」——确认画风');
 
-      const setupTxt = buildSetupTask({ name: title, cast: castData, art: artData, ratio, style });
+      const setupTxt = buildSetupTask({ name: title, cast: castData, art: artData, ratio, style, styleMode });
       const castLookup = buildCastLookup(castData);
       const artNames = buildArtLookup(artData);
       const storyTxt = buildStoryboardTask({
-        name: title, storyboard: sbData, cast: castData, art: artData, ratio, style,
+        name: title, storyboard: sbData, cast: castData, art: artData, ratio, style, styleMode,
         castLookup, artNames,
       });
       const sheetCount = (setupTxt.match(/【图\d+ ·/g) || []).length;
       const shotCount = (storyTxt.match(/【E\d{2}-\d{2} 第\d+镜】/g) || []).length;
 
       // 样张图是否真实入包：路径存在才算（否则说明.txt 不能声称包里有样张，GPT 会找空）
+      // session 轨画风钉会话、样张不入包（会话已含）——忽略 --style-ref 防双画风打架
       let styleRefPacked = false;
-      if (styleRef && existsSync(styleRef)) {
+      if (styleMode === 'session') {
+        if (styleRef) console.warn('⚠️ styleMode=session：画风钉会话、样张不入包，忽略 --style-ref（防双画风打架）');
+      } else if (styleRef && existsSync(styleRef)) {
         styleRefPacked = true;
       } else if (styleRef) {
         console.warn(`⚠️ --style-ref 路径不存在: ${styleRef}（样张图不入包，画风可能不锁）`);
@@ -528,7 +548,7 @@ function main(argv) {
         console.error('❌ --stage 只能为 assets（只出设定图）/ storyboard（只出分镜图）/ all（一次到位）');
         process.exit(1);
       }
-      const instructionTxt = buildInstruction({ name: title, shotCount, sheetCount, ratio, style, styleRef: styleRefPacked, negative, stage });
+      const instructionTxt = buildInstruction({ name: title, shotCount, sheetCount, ratio, style, styleMode, styleRef: styleRefPacked, negative, stage });
 
       mkdirSync(out, { recursive: true });
       const files = [{ name: '说明.txt', content: instructionTxt }];

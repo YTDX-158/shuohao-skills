@@ -21,6 +21,13 @@
 
 ## 硬规则
 
+**先看画风模式：顶层 `styleMode`（缺省 `preset`）。** 它决定配方写法的落点：
+
+- **`preset`**——第 5、6 条照下面写：把当前画风的质感（渲染句/表面/光照/配色）**整段嵌进 `image.prompt` 和 `image.sheet`**（前置锁定的完整配方，或 `styles` 命令的五块）。
+- **`session`**——画风由用户在外部会话钉住（风格库配方 + 样张图发一次，会话记住）。**不要嵌质感配方**：提示词只写主体 + 版面 + 功能规范；渲染质感、光照、配色交给会话已钉的画风，写死反而打架。剥留清单见第 6 条末尾。
+
+下面 1–8 条除特别标注外，两种模式都适用。
+
 1. **一切基于观察记录。** 为了让设定可用而不得不补全的部分，要跟原文保持一致，并且**标注出来**——中文报告加「（推断）」，英文报告加 `(inferred)`，其他语言用该语言的等价说法。**只用一种标记，不要中英都加。**
 
 2. **`persona.evidence` 只能放「可引用原文」区块里的字符串，逐字照抄。** 不许翻译、不许裁剪、不许把两条合并、不许从观察记录里另找。那个区块是空的就返回空数组。**注意：引文永远保持原文语言，不跟随 `lang`**——它是证据，翻译了就不是证据了。
@@ -88,6 +95,16 @@
    **一张图里只能有一个长相。** 三视图的面部与左栏半身像一致——同样的五官、发型、表情。左栏是基准，右栏照着它画。
 
    提示词里必须逐条写明：`ONE 16:9 landscape canvas`、`LEFT ZONE ... about 34% of the canvas width`、`RIGHT-TOP ZONE`、`RIGHT-BOTTOM ZONE`、`thin hairline rules`、`PROPORTIONS ARE CRITICAL`、`the detail studies give way, not the figures`。
+
+   **`styleMode=session` 时第 6 条要剥配方**——上面整段保留这些（版面 + 主体 + 功能规范）：`ONE 16:9 canvas` 三区划分、34% 左栏半身基准、右上三视图共地平线等高、右下细节条、比例写死细节让位、纯白背景可抠、人物长相/服装/族裔年代地域、一张图一个长相。**剥掉这些（质感配方）**：渲染句（`Semi-realistic character illustration, painterly rendering...`）、皮肤表面细节段（毛孔/毛细血管/次表面散射/虹膜纤维/织纹磨损这类）、光照分区指令（`LIGHTING IN THE LEFT ZONE ONLY` / `LIGHTING IN THE RIGHT ZONES: flat even orthographic...` 这类）、palette 配色句与画风渲染词尾句。质感由会话里钉好的画风提供，sheet 写死会跟它打架。
+
+   `styleMode=session` 时第 5 条的 `image.prompt` 同理：主体照写，画风句改用会话钉的画风名（一句话描述），别嵌固定渲染句。
+
+   session 轨 `image.sheet` 形态示意（只有版面 + 主体，无质感配方；中文括注是给你的提示，别写进 sheet）：
+
+   ```text
+   Single character model sheet on ONE 16:9 landscape canvas, three zones divided by thin hairline rules. LEFT ZONE (about 34% width): one bust portrait, front-facing, both shoulders fully visible, bottom edge a clean straight horizontal cut. RIGHT-TOP ZONE: three full-body views of the same character side by side — front, left side profile, back — aligned on one shared ground line, identical height and head-to-body ratio, feet on the ground line, clear margin above head and below feet. RIGHT-BOTTOM ZONE: four to five small isolated close-up studies of [此人独有的细节：如辫梢红绳、皮箱铜扣]，evenly spaced. Plain pure white background (#FFFFFF), clean cut-out. 【主体：外形、服装、族裔年代地域照第 4、6 条写全】 （不写渲染句、不写皮肤表面细节、不写 LIGHTING 分区、不写 palette 配色尾句——质感归会话钉的画风）
+   ```
 
 7. `voice.prompt` 是给 TTS 音色设计引擎的：描述**乐器本身**，不是某一句台词的演绎。性别、听感年龄、音色、音高区间、共鸣、气声、语速、节奏、口音、能量、默认情绪。
 

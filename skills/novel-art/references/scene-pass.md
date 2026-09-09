@@ -24,7 +24,9 @@
 
 4. **提示词永远英文，永远空景。**`image.prompt` 里明写 empty scene / no people，`negativePrompt` 必须禁人。**绝不出现角色名、作者名、作品名**——图像模型会把它认识的东西画进去。
 
-5. **风格整套取用。**跑 `node scripts/novel-art.mjs styles` 拿当前风格的 render/surface/negative/tags，`image.sheet` 里整段带上渲染句和表面处理句，不要混搭两种风格。
+5. **风格分两轨**——顶层 `styleMode`（缺省 `preset`）决定配方落点：
+   - **【preset】**风格整套取用：跑 `node scripts/novel-art.mjs styles` 拿当前风格的 render/surface/negative/tags，`image.sheet` 里整段带上渲染句和表面处理句，不要混搭两种风格。
+   - **【session】**画风由用户在外部会话钉住（配方+样张图发一次），`image.sheet` **不嵌配方**——不写渲染句、不写表面处理句、不写 palette 配色词；只写「这是哪个空间、空景无人、锚点特征」，版面功能规范（尺寸/结构可辨识）照写。负面词按会话钉的画风定，别照 `styles` 抄。
 
 6. **能做变体就别开新景。**AI 生成一个新环境很便宜，但**每多一个独立环境就多一份一致性维护**。outline 里带复用方案的场景（seedNote 会提示），用 `variantOf` + `changes` 挂到母场景上：改时段、换天气、换前景、删道具，桥板细节这类资产直接复用。
 

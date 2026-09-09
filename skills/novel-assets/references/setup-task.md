@@ -30,6 +30,6 @@
 
 ## 画风锚点
 
-取 `--style` 参数（默认回退 `storyboard.style`，如"暗黑写实电影感"），放【统一要求】第 1 条。所有图都引用它，防画风漂移。
+取 `--style` 参数（默认回退 `storyboard.style`，如"暗黑写实电影感"），放【统一要求】第 1 条。所有图都引用它，防画风漂移。**`styleMode=session`（顶层，脚本从 storyboard.json 读）时这句改「画风用会话开头钉住的那个」**——characters/art 已把配方剥出 sheet，本任务不再声称 sheet 带画风，见 `buildSetupTask` 的 session 分支。
 
 **源头带风格**：前置询问锁定的画风配方（见规则 feedback_pipeline_preflight_params）由 characters 写 sheet 时已带进 `image.sheet`——本任务**原样输出 sheet**（不重复写配方），只写风格名锚点。飞书特化风格的样张图（画风锚）由说明.txt 统一说明，不在本任务内重复。负面词由说明.txt 的【统一画风】段写（GPT 网页版无负面词栏）。

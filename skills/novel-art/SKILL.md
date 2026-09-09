@@ -70,9 +70,14 @@ metadata:
 
 **若没有锁定配置，必须当场问**（不能默默用默认 `realistic`）：给用户三层风格选项——① 市面预设 ② 从飞书风格库选 ③ 自定义（丢参考图/链接）。选完当场定负面词存配置，再写 sheet。**跟角色 skill（novel-characters Step 0.5）保持同一画风**——角色是吉卜力、场景是半写实，合成的时候没法看。
 
-**style 字段语义分工（别混）**：`art.json` 顶层 `style` 是**渲染维度预设**（realistic / ghibli，validate 只认这两个）；`cast.json` 顶层 `style` 是**锁定画风名**（自由文本，画风锚）。看到 cast.style="暗黑写实电影感"是画风锚，**别写进 art.json 的 style**（validate 会拦）；锁定画风的完整配方从项目记忆取，融进每个 scene/prop 的 sheet 提示词（源头带）。
+**style 字段语义分工（别混）**：`art.json` 顶层 `style` 是**渲染维度预设**（realistic / ghibli，validate 只认这两个）；`cast.json` 顶层 `style` 是**锁定画风名**（自由文本，画风锚）。看到 cast.style="暗黑写实电影感"是画风锚，**别写进 art.json 的 style**（validate 会拦；`styleMode=session` 时例外——见下，session 允许自定义画风名，校验只提醒不拦）；锁定画风的完整配方从项目记忆取，融进每个 scene/prop 的 sheet 提示词（源头带）。
 
 画风兜底：默认 `realistic`（半写实厚涂），动画质感用 `ghibli`。跑 `node {baseDir}/scripts/novel-art.mjs styles` 看预设全文，整块取用不混搭。
+
+**styleMode — 配方落点（跟 novel-characters 同步）**：顶层 `styleMode` 缺省 `preset`，选 `session` 时显式置（跟 cast.json 对齐，手填剧记得同步）。两种模式：
+
+- **【preset】**：上面的源头带风格照常——配方（render/色调/负面词）融进每个 scene/prop 的 sheet，`style` 限 realistic / ghibli。
+- **【session】**：画风由用户在外部 GPT 会话钉（配方+样张发一次），scene/prop 的 sheet **不嵌配方**——只写空间是什么、空景、锚点特征、版面功能；`style` 可写自定义画风名（如「柔彩墨线」，校验只提醒不拦）。负面词按会话画风，别照 `styles` 抄。
 
 有 cast.json（novel-characters 的产出）也带上——校验「提示词不含角色名」要用。
 
